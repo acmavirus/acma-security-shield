@@ -219,6 +219,161 @@ class SecurityService
         set_transient($key, $attempts, $lockout_time);
 
         $this->log_event('login_failed', "Đăng nhập thất bại lần $attempts từ IP $ip", $ip);
+
+        // Gửi cảnh báo nếu thử sai quá 3 lần
+        if ($attempts >= 3 && $this->get_setting('enable_email_alerts', false)) {
+            $this->send_security_alert(
+                'Cảnh báo: Thử đăng nhập trái phép',
+                "Phát hiện IP $ip đã thử đăng nhập thất bại $attempts lần trên website của bạn."
+            );
+        }
+    }
+
+    /**
+     * Kiểm tra xem IP có nằm trong danh sách trắng không
+     */
+    public function is_ip_whitelisted($ip)
+    {
+        $whitelist = get_option('wps_whitelist_ips', []);
+        return in_array($ip, $whitelist);
+    }
+
+    /**
+     * Gửi cảnh báo bảo mật qua email
+     */
+    public function send_security_alert($subject, $message)
+    {
+        $admin_email = get_option('admin_email');
+        $site_name = get_bloginfo('name');
+        $full_subject = "[$site_name Security] $subject";
+        
+        $body = "Chào Admin,\n\n";
+        $body .= "$message\n\n";
+        $body .= "Thời gian: " . current_time('mysql') . "\n";
+        $body .= "IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'Unknown') . "\n";
+        $body .= "Trình duyệt: " . ($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown') . "\n\n";
+        $body .= "Đây là thông báo tự động từ WP Plugin Security.";
+
+        wp_mail($admin_email, $full_subject, $body);
+    }
+
+    /**
+     * Xử lý 2FA qua Email
+     */
+    public function handle_2fa_email($user_id)
+    {
+        $code = wp_generate_password(6, false, false);
+        set_transient('wps_2fa_' . $user_id, $code, 15 * MINUTE_IN_SECONDS);
+
+        $user = get_userdata($user_id);
+        $subject = "Mã xác thực 2 lớp (2FA)";
+        $message = "Mã xác thực của bạn là: $code\nHiệu lực trong 15 phút.";
+        
+        wp_mail($user->user_email, $subject, $message);
+    }
+
+    /**
+     * Xác minh mã 2FA
+     */
+    public function verify_2fa($user_id, $code)
+    {
+        $saved_code = get_transient('wps_2fa_' . $user_id);
+        if ($saved_code && $saved_code === $code) {
+            delete_transient('wps_2fa_' . $user_id);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Quét Malware trong thư mục Uploads
+     */
+    public function scan_for_malware()
+    {
+        $upload_dir = wp_upload_dir()['basedir'];
+        $found_files = [];
+
+        if (!is_dir($upload_dir)) return $found_files;
+
+        $it = new \RecursiveDirectoryIterator($upload_dir);
+        foreach (new \RecursiveIteratorIterator($it) as $file) {
+            if ($file->getExtension() === 'php') {
+                $found_files[] = [
+                    'path' => str_replace(ABSPATH, '', $file->getPathname()),
+                    'type' => 'Potential Script in Uploads',
+                    'size' => size_format($file->getSize()),
+                    'time' => date('Y-m-d H:i:s', $file->getMTime())
+                ];
+            }
+        }
+
+        return $found_files;
+    }
+
+    /**
+     * Kiểm tra tính toàn vẹn của các file lõi (cơ bản)
+     */
+    public function check_file_integrity()
+    {
+        $critical_files = [
+            ABSPATH . 'wp-config.php',
+            ABSPATH . '.htaccess',
+            ABSPATH . 'index.php',
+            ABSPATH . 'wp-settings.php'
+        ];
+
+        $changes = [];
+        foreach ($critical_files as $file) {
+            if (file_exists($file)) {
+                $mtime = file_mtime($file);
+                // Nếu file bị sửa đổi trong vòng 24h qua
+                if ((time() - $mtime) < DAY_IN_SECONDS) {
+                    $changes[] = [
+                        'file' => basename($file),
+                        'time' => date('Y-m-d H:i:s', $mtime)
+                    ];
+                }
+            }
+        }
+
+        return $changes;
+    }
+
+    /**
+     * Lấy danh sách các phiên đăng nhập của User hiện tại
+     */
+    public function get_active_sessions($user_id)
+    {
+        $sessions = \WP_Session_Tokens::get_instance($user_id);
+        return $sessions->get_all();
+    }
+
+    /**
+     * Tính toán điểm số bảo mật (0-100)
+     */
+    public function calculate_security_score()
+    {
+        $score = 0;
+        $settings = get_option('wps_main_settings', []);
+
+        $weights = [
+            'disable_xmlrpc'          => 10,
+            'limit_login_attempts'    => 15,
+            'rename_login_slug'       => 20,
+            'enable_2fa'              => 20,
+            'enforce_strong_password' => 10,
+            'enable_security_headers' => 10,
+            'enable_email_alerts'     => 10,
+            'disable_rest_api'        => 5,
+        ];
+
+        foreach ($weights as $key => $weight) {
+            if (!empty($settings[$key])) {
+                $score += $weight;
+            }
+        }
+
+        return min(100, $score);
     }
 }
 

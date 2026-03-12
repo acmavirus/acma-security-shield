@@ -47,6 +47,9 @@ class SecurityController
         // Thêm các header bảo mật
         add_filter('wp_headers', [$this, 'add_security_headers']);
 
+        // Privacy Hardening: Xóa các link rác trong head
+        add_action('init', [$this, 'privacy_hardening']);
+
         // Vô hiệu hóa XML-RPC
         if ($this->security_service->get_setting('disable_xmlrpc', true)) {
             add_filter('xmlrpc_enabled', '__return_false');
@@ -67,11 +70,6 @@ class SecurityController
             }
         }
 
-        // Chặn Directory Browsing (Hook vào headers hoặc dùng .htaccess)
-        if ($this->security_service->get_setting('disable_directory_browsing', true)) {
-            // Thường xử lý qua .htaccess nhưng có thể hook vào để redirect nếu cần
-        }
-
         // Chặn REST API cho người dùng không đăng nhập
         if ($this->security_service->get_setting('disable_rest_api', true)) {
             add_filter('rest_authentication_errors', function ($result) {
@@ -86,6 +84,23 @@ class SecurityController
         // Giới hạn đăng nhập
         add_action('wp_login_failed', [$this, 'handle_failed_login']);
         add_filter('authenticate', [$this, 'check_login_lockout'], 30, 3);
+
+        // 2FA - Xác thực 2 lớp
+        if ($this->security_service->get_setting('enable_2fa', false)) {
+            add_action('wp_login', [$this, 'init_2fa_verification'], 10, 2);
+            add_action('init', [$this, 'handle_2fa_submission']);
+        }
+
+        // Thông báo đăng nhập thành công
+        add_action('wp_login', [$this, 'alert_on_login'], 20, 2);
+
+        // Google reCAPTCHA v3
+        $site_key = $this->security_service->get_setting('recaptcha_site_key', '');
+        if (!empty($site_key)) {
+            add_action('login_enqueue_scripts', [$this, 'enqueue_recaptcha']);
+            add_action('login_form', [$this, 'add_recaptcha_field']);
+            add_filter('wp_authenticate_user', [$this, 'verify_recaptcha'], 10, 2);
+        }
 
         // Bắt buộc mật khẩu mạnh
         if ($this->security_service->get_setting('enforce_strong_password', true)) {
@@ -109,6 +124,164 @@ class SecurityController
                 define('DISALLOW_FILE_EDIT', true);
             }
         }
+    }
+
+    /**
+     * Dọn dẹp các link không cần thiết trong head (Privacy Hardening)
+     */
+    public function privacy_hardening()
+    {
+        remove_action('wp_head', 'rsd_link');
+        remove_action('wp_head', 'wlwmanifest_link');
+        remove_action('wp_head', 'wp_shortlink_wp_head');
+        remove_action('wp_head', 'rest_output_link_wp_head');
+    }
+
+    /**
+     * Cảnh báo khi có người đăng nhập thành công
+     */
+    public function alert_on_login($user_login, $user)
+    {
+        if ($this->security_service->get_setting('enable_email_alerts', false)) {
+            $this->security_service->send_security_alert(
+                'Thông báo: Đăng nhập thành công',
+                "Tài khoản $user_login vừa đăng nhập thành công vào website."
+            );
+        }
+    }
+
+    /**
+     * Bắt đầu xác thực 2FA sau khi đăng nhập đúng pass
+     */
+    public function init_2fa_verification($user_login, $user)
+    {
+        if (is_admin()) return; // Tránh loop trong admin
+
+        // Đánh dấu user đang chờ 2FA
+        set_transient('wps_pending_2fa_' . $user->ID, true, 15 * MINUTE_IN_SECONDS);
+        $this->security_service->handle_2fa_email($user->ID);
+
+        // Logout ngay để bắt xác thực
+        wp_logout();
+
+        // Redirect sang trang nhập mã (dùng luôn wp-login hoặc trang custom)
+        wp_redirect(home_url('?wps_2fa_verify=1&uid=' . $user->ID));
+        exit;
+    }
+
+    /**
+     * Xử lý khi user submit mã 2FA
+     */
+    public function handle_2fa_submission()
+    {
+        if (isset($_GET['wps_2fa_verify']) && isset($_POST['wps_2fa_code'])) {
+            $user_id = (int)$_GET['uid'];
+            $code = sanitize_text_field($_POST['wps_2fa_code']);
+
+            if ($this->security_service->verify_2fa($user_id, $code)) {
+                delete_transient('wps_pending_2fa_' . $user_id);
+                wp_set_auth_cookie($user_id);
+                wp_redirect(admin_url());
+                exit;
+            } else {
+                wp_die('Mã xác thực không đúng hoặc đã hết hạn.', '2FA Error', ['back_link' => true]);
+            }
+        }
+
+        // Hiển thị form 2FA nếu đang trong luồng
+        if (isset($_GET['wps_2fa_verify'])) {
+            $this->render_2fa_form();
+            exit;
+        }
+    }
+
+    /**
+     * Render Form 2FA đơn giản (Bootstrap)
+     */
+    private function render_2fa_form()
+    {
+        ?>
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Xác thực 2 lớp - WP Security</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+            <style>
+                body { background: #f0f2f5; display: flex; align-items: center; justify-content: center; height: 100vh; }
+                .card { border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+            </style>
+        </head>
+        <body>
+            <div class="card p-4" style="width: 100%; max-width: 400px;">
+                <div class="text-center mb-4">
+                    <h1 class="h4 fw-bold">Xác thực 2 lớp</h1>
+                    <p class="text-muted small">Vui lòng nhập mã bảo mật đã được gửi vào email của bạn.</p>
+                </div>
+                <form method="post" action="">
+                    <div class="mb-3">
+                        <input type="text" name="wps_2fa_code" class="form-control form-control-lg text-center fw-bold" placeholder="000000" maxlength="6" required autofocus>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Xác nhận</button>
+                </form>
+            </div>
+        </body>
+        </html>
+        <?php
+    }
+
+    /**
+     * Enqueue Google reCAPTCHA v3 script
+     */
+    public function enqueue_recaptcha()
+    {
+        $site_key = $this->security_service->get_setting('recaptcha_site_key', '');
+        wp_enqueue_script('google-recaptcha', "https://www.google.com/recaptcha/api.js?render={$site_key}", [], null, true);
+    }
+
+    /**
+     * Thêm hidden field cho reCAPTCHA token vào login form
+     */
+    public function add_recaptcha_field()
+    {
+        $site_key = $this->security_service->get_setting('recaptcha_site_key', '');
+        ?>
+        <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
+        <script>
+            grecaptcha.ready(function() {
+                grecaptcha.execute('<?php echo $site_key; ?>', {action: 'login'}).then(function(token) {
+                    document.getElementById('g-recaptcha-response').value = token;
+                });
+            });
+        </script>
+        <?php
+    }
+
+    /**
+     * Xác minh reCAPTCHA token khi submit login
+     */
+    public function verify_recaptcha($user, $password)
+    {
+        if (isset($_POST['g-recaptcha-response'])) {
+            $token = $_POST['g-recaptcha-response'];
+            $secret = $this->security_service->get_setting('recaptcha_secret_key', '');
+            
+            $response = wp_remote_post('https://www.google.com/recaptcha/api/siteverify', [
+                'body' => [
+                    'secret' => $secret,
+                    'response' => $token,
+                    'remoteip' => $_SERVER['REMOTE_ADDR']
+                ]
+            ]);
+
+            $result = json_decode(wp_remote_retrieve_body($response), true);
+
+            if (empty($result['success']) || $result['score'] < 0.5) {
+                return new \WP_Error('recaptcha_failed', '<strong>Lỗi:</strong> Phát hiện hành vi nghi ngờ (Bot). Vui lòng thử lại.');
+            }
+        }
+        return $user;
     }
 
     /**
@@ -210,8 +383,14 @@ class SecurityController
      */
     public function handle_security_checks()
     {
-        // 1. Kiểm tra IP
         $user_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
+        // Bỏ qua nếu là IP Whitelist
+        if ($this->security_service->is_ip_whitelisted($user_ip)) {
+            return;
+        }
+
+        // 1. Kiểm tra IP Blocked
         if ($this->security_service->is_ip_blocked($user_ip)) {
             $this->security_service->log_event('ip_blocked', "IP $user_ip cố gắng truy cập");
             wp_die('Truy cập bị chặn bởi WP Plugin Security!', 'Access Denied', ['response' => 403]);
@@ -230,6 +409,12 @@ class SecurityController
     public function handle_failed_login($username)
     {
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        
+        // Không đếm số lần thử của IP whitelist
+        if ($this->security_service->is_ip_whitelisted($ip)) {
+            return;
+        }
+
         $this->security_service->increment_login_attempts($ip);
     }
 
@@ -239,6 +424,12 @@ class SecurityController
     public function check_login_lockout($user, $username, $password)
     {
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
+        // Bỏ qua nếu là IP Whitelist
+        if ($this->security_service->is_ip_whitelisted($ip)) {
+            return $user;
+        }
+
         if (!$this->security_service->check_login_attempts($ip)) {
             return new \WP_Error('locked_out', 'IP của bạn tạm thời bị khóa do thử sai quá nhiều lần.');
         }
