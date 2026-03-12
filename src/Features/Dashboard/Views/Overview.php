@@ -1,108 +1,83 @@
 <?php
 // Copyright by AcmaTvirus
 if (!defined('ABSPATH')) exit;
+
+$score_class = 'wps-score-green';
+if ($security_score < 40) {
+    $score_class = 'wps-score-red';
+} elseif ($security_score < 70) {
+    $score_class = 'wps-score-yellow';
+}
 ?>
 
-<div class="grid grid-cols-12 gap-6 mb-8">
-    <!-- Security Score (Growth Style) -->
-    <div class="col-span-12 lg:col-span-4 dark-glass-card rounded-[40px] p-8 flex flex-col justify-between shadow-2xl">
-        <div>
-            <div class="flex justify-between items-start mb-6">
-                <span class="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Security Score</span>
-                <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                    <span class="dashicons dashicons-shield text-white !text-sm !w-auto !h-auto"></span>
-                </div>
-            </div>
-            <div class="flex items-baseline gap-2 mb-4">
-                <span class="text-7xl font-bold tracking-tighter"><?php echo $security_score; ?></span>
-                <span class="text-gray-400 text-xl font-medium">/100</span>
-            </div>
-            <div class="w-full h-1.5 bg-white/10 rounded-full mb-4 overflow-hidden">
-                <div class="h-full <?php echo $security_score > 70 ? 'bg-green-400' : ($security_score > 40 ? 'bg-yellow-400' : 'bg-red-400'); ?>" style="width: <?php echo $security_score; ?>%"></div>
-            </div>
-            <p class="text-[9px] text-gray-400 uppercase tracking-[0.2em] font-black">Health Status</p>
+<div class="wps-grid">
+    <!-- Security Score -->
+    <div class="wps-card">
+        <h2 class="title" style="text-align:center; margin-bottom: 20px;">Trạng thái bảo mật</h2>
+        <div class="wps-score-circle <?php echo $score_class; ?>">
+            <?php echo $security_score; ?>/100
         </div>
-        <div class="grid grid-cols-3 gap-3 mt-10">
-            <div class="bg-white/5 p-4 rounded-3xl text-center backdrop-blur-sm">
-                <div class="text-xl font-bold">32</div>
-                <div class="text-[8px] text-gray-500 uppercase font-bold mt-1">Files Scan</div>
+        <p style="text-align:center; font-weight: bold;">
+            <?php 
+            if ($security_score > 70) echo "Hệ thống của bạn đang an toàn";
+            elseif ($security_score > 40) echo "Cần cải thiện bảo mật";
+            else echo "Cảnh báo: Bảo mật đang ở mức thấp!";
+            ?>
+        </p>
+        <div class="wps-stats" style="display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+            <div style="text-align: center;">
+                <span class="dashicons dashicons-shield"></span>
+                <div style="font-size: 18px; font-weight: bold;">32</div>
+                <div style="font-size: 11px; color: #666;">Đã quét</div>
             </div>
-            <div class="bg-white/5 p-4 rounded-3xl text-center backdrop-blur-sm">
-                <div class="text-xl font-bold"><?php echo $blocked_count; ?></div>
-                <div class="text-[8px] text-gray-500 uppercase font-bold mt-1">Blocked</div>
-            </div>
-            <div class="bg-white/5 p-4 rounded-3xl text-center border border-white/10">
-                <div class="text-xl font-bold"><?php echo $security_score; ?>%</div>
-                <div class="text-[8px] text-gray-500 uppercase font-bold mt-1">Rating</div>
+            <div style="text-align: center;">
+                <span class="dashicons dashicons-no-alt"></span>
+                <div style="font-size: 18px; font-weight: bold;"><?php echo $blocked_count; ?></div>
+                <div style="font-size: 11px; color: #666;">Đã chặn</div>
             </div>
         </div>
     </div>
 
-    <!-- Weekly Status (Placeholder for Chart) -->
-    <div class="col-span-12 lg:col-span-4 glass-card rounded-[40px] p-8 shadow-sm">
-         <div class="flex justify-between items-center mb-6">
-            <h4 class="font-bold text-sm">Weekly process</h4>
-            <span class="dashicons dashicons-chart-area text-black"></span>
-        </div>
-        <div class="flex gap-4 mb-8">
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-black"></div>
-                <span class="text-[10px] font-bold uppercase tracking-wider">Threats</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-gray-300"></div>
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Blocked</span>
-            </div>
-        </div>
-        <div class="h-40 flex items-end gap-2.5 px-2">
-            <?php for($i=1; $i<=7; $i++): $h = rand(30, 95); ?>
-                <div class="flex-grow bg-black group relative rounded-xl transition-all hover:bg-gray-800 cursor-pointer" style="height: <?php echo $h; ?>%;">
-                    <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-black px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
-                        <?php echo $h; ?>%
-                    </div>
-                </div>
-            <?php endfor; ?>
-        </div>
-        <div class="flex justify-between mt-6 px-1 text-[9px] font-black text-gray-400 uppercase tracking-widest">
-             <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span class="w-5 h-5 rounded-full bg-black text-white flex items-center justify-center -mt-1">Sun</span>
-        </div>
-    </div>
-
-    <!-- Month Progress -->
-    <div class="col-span-12 lg:col-span-4 glass-card rounded-[40px] p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h4 class="font-bold text-sm">System Status</h4>
-            <span class="dashicons dashicons-external text-black"></span>
-        </div>
-        <div class="mb-10">
-            <span class="text-4xl font-bold"><?php echo $security_score; ?>%</span>
-            <span class="text-[10px] text-gray-400 font-bold ml-2 uppercase tracking-widest">Hardened*</span>
-        </div>
-        
-        <div class="space-y-5">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div class="w-2 h-2 rounded-full bg-black"></div>
-                    <span class="text-xs font-bold">Audit Service</span>
-                </div>
-                <span class="text-[10px] font-black text-green-500 uppercase">Active</span>
-            </div>
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div class="w-2 h-2 rounded-full bg-gray-200"></div>
-                    <span class="text-xs font-bold">WAF Firewall</span>
-                </div>
-                <span class="text-[10px] font-black text-green-500 uppercase">Enabled</span>
-            </div>
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div class="w-2 h-2 rounded-full bg-gray-400"></div>
-                    <span class="text-xs font-bold text-gray-400">Malware Scan</span>
-                </div>
-                <span class="text-[10px] font-black text-gray-300 uppercase">Idle</span>
-            </div>
-        </div>
-
-        <button class="w-full mt-10 border-2 border-black py-4 rounded-2xl font-bold text-[10px] hover:bg-black hover:text-white transition-all uppercase tracking-widest shadow-lg active:scale-95">Download PDF Report</button>
+    <!-- System Status -->
+    <div class="wps-card">
+        <h2 class="title">Trạng thái dịch vụ</h2>
+        <table class="wp-list-table widefat fixed striped" style="margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th>Dịch vụ</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Hệ thống Audit</strong></td>
+                    <td><span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span> Hoạt động</td>
+                </tr>
+                <tr>
+                    <td><strong>WAF Firewall</strong></td>
+                    <td><span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span> Đã bật</td>
+                </tr>
+                <tr>
+                    <td><strong>Quét Malware</strong></td>
+                    <td><span class="dashicons dashicons-clock" style="color: #999;"></span> Chờ lệnh</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="submit">
+            <a href="#" class="button button-secondary">Tạo báo cáo chi tiết</a>
+        </p>
     </div>
 </div>
+
+<div class="wps-card" style="margin-top: 20px;">
+    <h2 class="title">Bản đồ hoạt động (7 ngày qua)</h2>
+    <div style="height: 150px; display: flex; align-items: flex-end; gap: 10px; padding: 20px; background: #fafafa; border: 1px solid #eee;">
+        <?php for($i=1; $i<=7; $i++): $h = rand(20, 100); ?>
+            <div style="flex: 1; height: <?php echo $h; ?>%; background: #2271b1; border-radius: 2px;" title="<?php echo $h; ?> mối đe dọa"></div>
+        <?php endfor; ?>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-top: 10px; color: #666; font-size: 11px;">
+        <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
+    </div>
+</div>
+<?php

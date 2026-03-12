@@ -3,57 +3,53 @@
 if (!defined('ABSPATH')) exit;
 ?>
 
-<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-    <div>
-        <h3 class="font-bold text-2xl">Audit Trail</h3>
-        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Hành vi hệ thống trong 30 ngày qua</p>
-    </div>
-    <div class="bg-black text-white text-[10px] font-bold px-4 py-2 rounded-full uppercase shadow-xl"><?php echo count($audit_logs); ?> entries found</div>
-</div>
+<div class="wps-card">
+    <h2 class="title" style="display: flex; justify-content: space-between; align-items: center;">
+        Audit Trail
+        <span class="update-plugins count-<?php echo count($audit_logs); ?>" style="font-size: 11px;"><?php echo count($audit_logs); ?> mục</span>
+    </h2>
+    <p class="description">Hành vi hệ thống trong 30 ngày qua.</p>
 
-<div class="overflow-x-auto">
-    <table class="w-full text-left border-separate border-spacing-y-3">
+    <table class="wp-list-table widefat fixed striped" style="margin-top: 20px;">
         <thead>
-            <tr class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                <th class="px-6 py-4">Timestamp</th>
-                <th class="px-6 py-4">User</th>
-                <th class="px-6 py-4">Action</th>
-                <th class="px-6 py-4">Activity Details</th>
-                <th class="px-6 py-4">IP Source</th>
+            <tr>
+                <th style="width: 150px;">Thời gian</th>
+                <th style="width: 120px;">Người dùng</th>
+                <th style="width: 150px;">Hành động</th>
+                <th>Chi tiết hoạt động</th>
+                <th style="width: 120px;">IP</th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($audit_logs)) : ?>
                 <tr>
-                    <td colspan="5" class="py-20 text-center text-gray-400 font-bold italic">No log entries recorded yet.</td>
+                    <td colspan="5" style="text-align: center; padding: 20px;">Chưa có dữ liệu nhật ký.</td>
                 </tr>
             <?php else : foreach (array_reverse(array_slice($audit_logs, -50)) as $log) :
-                    $label_color = 'text-gray-400 bg-gray-100';
                     $action_type = strtolower($log['action'] ?? '');
+                    $color = '#666';
                     if (strpos($action_type, 'login') !== false) {
-                        $label_color = 'text-green-600 bg-green-50';
+                        $color = '#46b450';
                     } elseif (strpos($action_type, 'security') !== false) {
-                        $label_color = 'text-red-500 bg-red-50';
+                        $color = '#dc3232';
                     }
             ?>
-                    <tr class="bg-gray-50/50 hover:bg-gray-50 transition-colors group">
-                        <td class="px-6 py-4 rounded-l-3xl">
-                            <div class="text-xs font-bold text-black"><?php echo date('H:i:s', strtotime($log['time'] ?? 'now')); ?></div>
-                            <div class="text-[10px] text-gray-400"><?php echo date('d/m/Y', strtotime($log['time'] ?? 'now')); ?></div>
+                    <tr>
+                        <td>
+                            <strong><?php echo date('H:i:s', strtotime($log['time'] ?? 'now')); ?></strong><br>
+                            <small><?php echo date('d/m/Y', strtotime($log['time'] ?? 'now')); ?></small>
                         </td>
-                        <td class="px-6 py-4 font-bold text-xs"><?php echo esc_html($log['user'] ?? 'Guest'); ?></td>
-                        <td class="px-6 py-4">
-                            <span class="text-[9px] font-black uppercase px-2 py-1 rounded-lg <?php echo $label_color; ?>">
-                                <?php echo esc_html($log['action'] ?? 'INFO'); ?>
-                            </span>
+                        <td><?php echo esc_html($log['user'] ?? 'Guest'); ?></td>
+                        <td>
+                           <span style="color: <?php echo $color; ?>; font-weight: bold; border: 1px solid <?php echo $color; ?>; padding: 2px 6px; border-radius: 3px; font-size: 10px; text-transform: uppercase;">
+                               <?php echo esc_html($log['action'] ?? 'INFO'); ?>
+                           </span>
                         </td>
-                        <td class="px-6 py-4 text-xs text-gray-500"><?php echo esc_html($log['message'] ?? ''); ?></td>
-                        <td class="px-6 py-4 rounded-r-3xl">
-                            <code class="text-[10px] font-bold text-black underline decoration-gray-200"><?php echo esc_html($log['ip'] ?? '0.0.0.0'); ?></code>
-                        </td>
+                        <td><?php echo esc_html($log['message'] ?? ''); ?></td>
+                        <td><code><?php echo esc_html($log['ip'] ?? '0.0.0.0'); ?></code></td>
                     </tr>
-            <?php endforeach;
-            endif; ?>
+            <?php endforeach; endif; ?>
         </tbody>
     </table>
 </div>
+<?php

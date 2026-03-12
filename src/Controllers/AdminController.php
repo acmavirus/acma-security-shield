@@ -31,54 +31,20 @@ class AdminController
             return;
         }
 
-        // Tailwind CSS via CDN (Dùng cho mẫu này, thực tế nên build local)
-        wp_enqueue_style('wps-tailwind', 'https://cdn.tailwindcss.com', [], '3.4.1');
-        
-        // Font cao cấp từ Google Fonts
-        wp_enqueue_style('wps-fonts', 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap', [], null);
+        // Chỉ giữ lại Dashicons (đã có sẵn trong WP)
+        wp_enqueue_style('dashicons');
 
-        // Custom Inline CSS để xử lý Glassmorphism và các hiệu ứng nâng cao
+        // Thêm một chút CSS tinh chỉnh để phù hợp với WP hơn
         $custom_css = "
-            body.toplevel_page_wp_plugin_security { background-color: #f0f2f5; font-family: 'Plus Jakarta Sans', sans-serif; }
-            #wpcontent { padding-left: 0; }
-            .glass-card { 
-                background: rgba(255, 255, 255, 0.7); 
-                backdrop-filter: blur(14px); 
-                border: 1px solid rgba(255, 255, 255, 0.4); 
-                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-            }
-            .dark-glass-card {
-                background: rgba(17, 24, 39, 0.95);
-                backdrop-filter: blur(14px);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                color: white;
-            }
-            .wps-sidebar-active {
-                background: black;
-                color: white !important;
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-            }
-            .wps-sidebar-active span { color: white !important; }
-            input:focus, select:focus, textarea:focus { outline: none !important; border-color: black !important; ring: 0 !important; }
-            .wps-switch input:checked ~ .wps-dot { transform: translateX(1.5rem); }
-            /* Hide WP default notices in our dashboard */
-            .toplevel_page_wp-plugin-security .notice, 
-            .toplevel_page_wp-plugin-security .updated, 
-            .toplevel_page_wp-plugin-security .error { display: none !important; }
+            .wps-card { background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04); padding: 20px; margin-top: 20px; }
+            .wps-score-circle { width: 100px; height: 100px; border-radius: 50%; border: 8px solid #f0f0f1; display: flex; items-center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px; }
+            .wps-score-green { border-color: #46b450; color: #46b450; }
+            .wps-score-yellow { border-color: #ffb900; color: #ffb900; }
+            .wps-score-red { border-color: #dc3232; color: #dc3232; }
+            .wps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+            .nav-tab-wrapper { margin-bottom: 20px; }
         ";
-        wp_add_inline_style('wps-tailwind', $custom_css);
-
-        // Tailwindow config
-        wp_add_inline_script('wps-tailwind', "
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
-                        borderRadius: { '4xl': '2rem', '5xl': '3rem' }
-                    }
-                }
-            }
-        ");
+        wp_add_inline_style('wp-admin', $custom_css);
     }
 
     /**
@@ -87,7 +53,7 @@ class AdminController
     public function add_action_links($links)
     {
         $custom_links = [
-            '<a href="' . admin_url('admin.php?page=wp-plugin-security') . '">Settings</a>',
+            '<a href="' . admin_url('admin.php?page=wp-plugin-security') . '">Cài đặt</a>',
         ];
         return array_merge($custom_links, (array)$links);
     }
@@ -119,7 +85,7 @@ class AdminController
     }
 
     /**
-     * Khởi tạo các Feature Controllers (Lazy loading hoặc cached)
+     * Khởi tạo các Feature Controllers
      */
     private function get_feature_controllers()
     {
@@ -138,10 +104,10 @@ class AdminController
      */
     public function render_admin_page()
     {
-        $current_tab = $_GET['tab'] ?? 'general';
+        $current_tab = $_GET['tab'] ?? 'dashboard';
         $features = $this->get_feature_controllers();
 
-        // Xử lý POST (Uỷ nhiệm cho các controller tương ứng)
+        // Xử lý POST
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($_POST['wps_tool_action'])) {
                 $features['tools']->handle_actions();
@@ -192,142 +158,53 @@ class AdminController
         $main_settings = get_option('wps_main_settings', []);
         $security_logs = get_option('wps_security_logs', []);
 ?>
-        <div id="wps-admin-root" class="flex min-h-screen bg-[#f0f2f5] p-0 font-sans">
-            <!-- Sidebar -->
-            <aside class="w-64 glass-card m-4 mr-0 rounded-[40px] flex flex-col overflow-hidden z-10 shrink-0">
-                <div class="p-8 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-black flex items-center justify-center shadow-2xl">
-                        <span class="dashicons dashicons-shield text-white !text-xl !w-auto !h-auto"></span>
-                    </div>
-                    <span class="text-xl font-extrabold tracking-tighter">WPSECURE</span>
-                </div>
+        <div class="wrap">
+            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+            <p class="description">Được cung cấp bởi AcmaTvirus Intelligence</p>
+            <hr class="wp-header-end">
 
-                <nav class="flex-grow px-4 space-y-2 mt-4">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4 mb-4">Protection</div>
-                    
-                    <a href="?page=wp-plugin-security&tab=general" class="flex items-center gap-4 px-6 py-4 rounded-3xl transition-all group <?php echo $current_tab === 'general' ? 'wps-sidebar-active' : 'text-gray-500 hover:bg-gray-100/50'; ?>">
-                        <span class="dashicons dashicons-admin-settings !text-lg transition-transform group-hover:scale-110"></span>
-                        <span class="font-bold text-xs uppercase tracking-wider">Hệ thống</span>
-                    </a>
-                    
-                    <a href="?page=wp-plugin-security&tab=login" class="flex items-center gap-4 px-6 py-4 rounded-3xl transition-all group <?php echo $current_tab === 'login' ? 'wps-sidebar-active' : 'text-gray-500 hover:bg-gray-100/50'; ?>">
-                        <span class="dashicons dashicons-lock !text-lg transition-transform group-hover:scale-110"></span>
-                        <span class="font-bold text-xs uppercase tracking-wider">Đăng nhập</span>
-                    </a>
+            <nav class="nav-tab-wrapper">
+                <a href="?page=wp-plugin-security&tab=dashboard" class="nav-tab <?php echo $current_tab === 'dashboard' ? 'nav-tab-active' : ''; ?>">Bảng điều khiển</a>
+                <a href="?page=wp-plugin-security&tab=general" class="nav-tab <?php echo $current_tab === 'general' ? 'nav-tab-active' : ''; ?>">Hệ thống</a>
+                <a href="?page=wp-plugin-security&tab=login" class="nav-tab <?php echo $current_tab === 'login' ? 'nav-tab-active' : ''; ?>">Đăng nhập</a>
+                <a href="?page=wp-plugin-security&tab=blacklist" class="nav-tab <?php echo $current_tab === 'blacklist' ? 'nav-tab-active' : ''; ?>">Firewall IP</a>
+                <a href="?page=wp-plugin-security&tab=audit" class="nav-tab <?php echo $current_tab === 'audit' ? 'nav-tab-active' : ''; ?>">Audit Log</a>
+                <a href="?page=wp-plugin-security&tab=monitoring" class="nav-tab <?php echo $current_tab === 'monitoring' ? 'nav-tab-active' : ''; ?>">Theo dõi</a>
+                <a href="?page=wp-plugin-security&tab=tools" class="nav-tab <?php echo $current_tab === 'tools' ? 'nav-tab-active' : ''; ?>">Công cụ</a>
+            </nav>
 
-                    <a href="?page=wp-plugin-security&tab=blacklist" class="flex items-center gap-4 px-6 py-4 rounded-3xl transition-all group <?php echo $current_tab === 'blacklist' ? 'wps-sidebar-active' : 'text-gray-500 hover:bg-gray-100/50'; ?>">
-                        <span class="dashicons dashicons-no-alt !text-lg transition-transform group-hover:scale-110"></span>
-                        <span class="font-bold text-xs uppercase tracking-wider">Firewall IP</span>
-                    </a>
-
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4 mt-8 mb-4">Analysis</div>
-
-                    <a href="?page=wp-plugin-security&tab=audit" class="flex items-center gap-4 px-6 py-4 rounded-3xl transition-all group <?php echo $current_tab === 'audit' ? 'wps-sidebar-active' : 'text-gray-500 hover:bg-gray-100/50'; ?>">
-                        <span class="dashicons dashicons-list-view !text-lg transition-transform group-hover:scale-110"></span>
-                        <span class="font-bold text-xs uppercase tracking-wider">Audit Log</span>
-                    </a>
-
-                    <a href="?page=wp-plugin-security&tab=monitoring" class="flex items-center gap-4 px-6 py-4 rounded-3xl transition-all group <?php echo $current_tab === 'monitoring' ? 'wps-sidebar-active' : 'text-gray-500 hover:bg-gray-100/50'; ?>">
-                        <span class="dashicons dashicons-visibility !text-lg transition-transform group-hover:scale-110"></span>
-                        <span class="font-bold text-xs uppercase tracking-wider">Theo dõi</span>
-                    </a>
-
-                    <a href="?page=wp-plugin-security&tab=tools" class="flex items-center gap-4 px-6 py-4 rounded-3xl transition-all group <?php echo $current_tab === 'tools' ? 'wps-sidebar-active' : 'text-gray-500 hover:bg-gray-100/50'; ?>">
-                        <span class="dashicons dashicons-hammer !text-lg transition-transform group-hover:scale-110"></span>
-                        <span class="font-bold text-xs uppercase tracking-wider">Công cụ</span>
-                    </a>
-                </nav>
-
-                <!-- PRO Promo -->
-                <div class="p-6">
-                    <div class="dark-glass-card p-6 rounded-[32px] relative overflow-hidden group hover:scale-[1.02] transition-all">
-                        <div class="absolute -right-10 -top-10 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-                        <div class="text-[9px] text-gray-400 font-black mb-1 uppercase tracking-[0.2em]">Upgrade Now</div>
-                        <div class="font-bold text-xs mb-4">Go Premium for Advanced WAF</div>
-                        <a href="#" class="block text-center bg-white text-black py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-colors">Explorer PRO</a>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Main Content Area -->
-            <main class="flex-grow p-8 overflow-y-auto max-h-screen">
-                <!-- Top Header -->
-                <header class="flex justify-between items-center mb-12">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm">
-                             <span class="dashicons dashicons-menu-alt3 text-black"></span>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Security Center</h2>
-                            <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Powered by AcmaTvirus Intelligence</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm border border-gray-100/50 group cursor-pointer hover:border-black transition-all">
-                             <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                             <span class="text-[10px] font-bold uppercase tracking-widest group-hover:text-black">All Systems Functional</span>
-                        </div>
-                        
-                        <div class="w-12 h-12 rounded-2xl bg-white border border-gray-100 flex items-center justify-center shadow-sm cursor-pointer hover:bg-gray-50">
-                             <span class="dashicons dashicons-bell !text-lg text-gray-400"></span>
-                        </div>
-
-                        <div class="flex items-center gap-3 pl-4 border-l border-gray-200">
-                             <div class="text-right">
-                                 <div class="text-xs font-bold"><?php echo wp_get_current_user()->display_name; ?></div>
-                                 <div class="text-[9px] font-bold text-gray-400 uppercase">Administrator</div>
-                             </div>
-                             <div class="w-12 h-12 rounded-2xl border-2 border-white shadow-xl overflow-hidden cursor-pointer hover:scale-105 transition-all">
-                                 <?php echo get_avatar(get_current_user_id(), 48); ?>
-                             </div>
-                        </div>
-                    </div>
-                </header>
-
-                <!-- Page Content Components -->
-                <section class="space-y-10 pb-12">
-                    <?php 
-                    // Luôn hiển thị Overview ở trang General hoặc Dashboard
-                    if ($current_tab === 'general' || $current_tab === 'dashboard') {
+            <div class="wps-content">
+                <?php 
+                switch ($current_tab) {
+                    case 'general':
+                        $features['firewall']->render_general_tab($main_settings);
+                        break;
+                    case 'login':
+                        $features['auth']->render_tab($main_settings);
+                        break;
+                    case 'blacklist':
+                        $features['firewall']->render_blacklist_tab($security_logs);
+                        break;
+                    case 'audit':
+                        $features['audit']->render_tab();
+                        break;
+                    case 'monitoring':
+                        $features['monitoring']->render_tab();
+                        break;
+                    case 'tools':
+                        $features['tools']->render_tab();
+                        break;
+                    case 'dashboard':
+                    default:
                         $features['dashboard']->render_overview();
-                    }
-                    ?>
+                        break;
+                }
+                ?>
+            </div>
 
-                    <div class="page-container relative">
-                        <?php 
-                        switch ($current_tab) {
-                            case 'general':
-                                $features['firewall']->render_general_tab($main_settings);
-                                break;
-                            case 'login':
-                                $features['auth']->render_tab($main_settings);
-                                break;
-                            case 'blacklist':
-                                $features['firewall']->render_blacklist_tab($security_logs);
-                                break;
-                            case 'audit':
-                                $features['audit']->render_tab();
-                                break;
-                            case 'monitoring':
-                                $features['monitoring']->render_tab();
-                                break;
-                            case 'tools':
-                                $features['tools']->render_tab();
-                                break;
-                            default:
-                                $features['dashboard']->render_overview();
-                                break;
-                        }
-                        ?>
-                    </div>
-                </section>
-
-                <footer class="mt-8 border-t border-gray-100 pt-8 flex justify-between items-center text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">
-                    <div>WP Plugin Security &bull; Version 2.0.0</div>
-                    <div>&copy; <?php echo date('Y'); ?> AcmaTvirus Intelligence</div>
-                </footer>
-            </main>
+            <div style="margin-top: 50px; border-top: 1px solid #ccd0d4; padding-top: 20px; color: #646970; font-size: 11px;">
+                <p>WP Plugin Security &bull; Phiên bản 2.1.0 &bull; Copyright by AcmaTvirus</p>
+            </div>
         </div>
 <?php
     }
