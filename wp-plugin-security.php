@@ -4,7 +4,7 @@
  * Plugin Name: WP Plugin Security
  * Plugin URI:  https://github.com/acmavirus/wp-plugin-security
  * Description: Giải pháp bảo mật toàn diện cho WordPress dựa trên kiến trúc Clean Architecture.
- * Version:     3.0.1
+ * Version:     3.0.10
  * Author:      AcmaTvirus
  * Author URI:  https://thuc.me
  * License:     GPL2

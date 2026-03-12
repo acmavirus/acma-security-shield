@@ -146,658 +146,278 @@ class AdminController
         $audit_logs = get_option('wps_audit_logs', []);
         $security_logs = get_option('wps_security_logs', []);
 ?>
-        <div class="wrap wps-admin-wrap">
-            <div class="wps-header">
-                <div class="wps-brand">
-                    <span class="dashicons dashicons-shield-alt"></span>
-                    <div>
-                        <h1>WP Plugin Security <span class="v-badge">v1.1.2</span></h1>
-                        <p class="description">Giải pháp bảo vệ website tối thượng của bạn.</p>
-                    </div>
-                </div>
-                <div class="wps-stats">
-                    <div class="stat-item">
-                        <span class="label">Sự kiện bảo mật</span>
-                        <span class="value"><?php echo count($security_logs); ?></span>
-                    </div>
-                </div>
-            </div>
-
-            <h2 class="nav-tab-wrapper wps-tabs">
+        <div class="wrap">
+            <h1><?php _e('WP Security Settings', 'wp-plugin-security'); ?> <span class="title-count" style="font-size: 0.5em; background: #eee; padding: 2px 8px; border-radius: 4px; vertical-align: middle;">v<?php echo WPS_PLUGIN_FILE ? '3.0.1' : '1.1.2'; ?></span></h1>
+            
+            <nav class="nav-tab-wrapper wp-clearfix" style="margin-bottom: 20px;">
                 <a href="?page=wp-plugin-security&tab=general" class="nav-tab <?php echo $current_tab === 'general' ? 'nav-tab-active' : ''; ?>">
-                    <span class="dashicons dashicons-admin-settings"></span> Hệ thống & WAF
+                    <span class="dashicons dashicons-admin-settings" style="margin-top: 4px;"></span> <?php _e('Hệ thống & WAF', 'wp-plugin-security'); ?>
                 </a>
                 <a href="?page=wp-plugin-security&tab=login" class="nav-tab <?php echo $current_tab === 'login' ? 'nav-tab-active' : ''; ?>">
-                    <span class="dashicons dashicons-lock"></span> Bảo mật Đăng nhập
+                    <span class="dashicons dashicons-lock" style="margin-top: 4px;"></span> <?php _e('Bảo mật Đăng nhập', 'wp-plugin-security'); ?>
                 </a>
                 <a href="?page=wp-plugin-security&tab=blacklist" class="nav-tab <?php echo $current_tab === 'blacklist' ? 'nav-tab-active' : ''; ?>">
-                    <span class="dashicons dashicons-no-alt"></span> IP Blacklist
+                    <span class="dashicons dashicons-no-alt" style="margin-top: 4px;"></span> <?php _e('IP Blacklist', 'wp-plugin-security'); ?>
                 </a>
                 <a href="?page=wp-plugin-security&tab=audit" class="nav-tab <?php echo $current_tab === 'audit' ? 'nav-tab-active' : ''; ?>">
-                    <span class="dashicons dashicons-list-view"></span> Audit Trail
+                    <span class="dashicons dashicons-list-view" style="margin-top: 4px;"></span> <?php _e('Audit Trail', 'wp-plugin-security'); ?>
                 </a>
                 <a href="?page=wp-plugin-security&tab=tools" class="nav-tab <?php echo $current_tab === 'tools' ? 'nav-tab-active' : ''; ?>">
-                    <span class="dashicons dashicons-hammer"></span> Công cụ
+                    <span class="dashicons dashicons-hammer" style="margin-top: 4px;"></span> <?php _e('Công cụ', 'wp-plugin-security'); ?>
                 </a>
-            </h2>
+            </nav>
 
-            <div class="wps-content-box">
+            <div class="wps-content-area">
                 <?php if ($current_tab === 'general') : ?>
                     <form method="post" action="">
                         <?php wp_nonce_field('wps_settings_action', 'wps_settings_nonce'); ?>
-                        <div class="wps-settings-grid">
-                            <div class="settings-section">
-                                <h3><span class="dashicons dashicons-shield"></span> Tường lửa & Hardening</h3>
+                        <h2><?php _e('Tường lửa & Hardening', 'wp-plugin-security'); ?></h2>
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th scope="row"><label for="disable_xmlrpc"><?php _e('Vô hiệu hóa XML-RPC', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="disable_xmlrpc" name="disable_xmlrpc" value="1" <?php checked($main_settings['disable_xmlrpc'] ?? false); ?>>
+                                    <p class="description"><?php _e('Ngăn chặn tấn công brute-force qua cổng XML-RPC.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="disable_rest_api"><?php _e('Hạn chế REST API', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="disable_rest_api" name="disable_rest_api" value="1" <?php checked($main_settings['disable_rest_api'] ?? false); ?>>
+                                    <p class="description"><?php _e('Chỉ cho phép người dùng đã đăng nhập truy cập API.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="block_author_scan"><?php _e('Chặn Author Scan', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="block_author_scan" name="block_author_scan" value="1" <?php checked($main_settings['block_author_scan'] ?? false); ?>>
+                                    <p class="description"><?php _e('Ngăn bot dò tìm username quản trị viên.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="disable_directory_browsing"><?php _e('Chặn Directory Browsing', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="disable_directory_browsing" name="disable_directory_browsing" value="1" <?php checked($main_settings['disable_directory_browsing'] ?? false); ?>>
+                                    <p class="description"><?php _e('Ngăn người lạ duyệt file trong thư mục.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="disable_file_editor"><?php _e('Tắt trình chỉnh sửa file', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="disable_file_editor" name="disable_file_editor" value="1" <?php checked($main_settings['disable_file_editor'] ?? false); ?>>
+                                    <p class="description"><?php _e('Vô hiệu hóa chỉnh sửa Code trong Admin.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                        </table>
 
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Vô hiệu hóa XML-RPC</label>
-                                        <span class="help">Ngăn chặn tấn công brute-force qua cổng XML-RPC.</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="disable_xmlrpc" <?php checked($main_settings['disable_xmlrpc'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
+                        <hr>
 
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Hạn chế REST API</label>
-                                        <span class="help">Chỉ cho phép người dùng đã đăng nhập truy cập API.</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="disable_rest_api" <?php checked($main_settings['disable_rest_api'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
+                        <h2><?php _e('Quyền riêng tư & Nhật ký', 'wp-plugin-security'); ?></h2>
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th scope="row"><label for="hide_wp_version"><?php _e('Ẩn phiên bản WP', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="hide_wp_version" name="hide_wp_version" value="1" <?php checked($main_settings['hide_wp_version'] ?? false); ?>>
+                                    <p class="description"><?php _e('Xóa bỏ dấu hiệu nhận biết phiên bản từ mã nguồn.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="enable_security_headers"><?php _e('Security Headers', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="enable_security_headers" name="enable_security_headers" value="1" <?php checked($main_settings['enable_security_headers'] ?? false); ?>>
+                                    <p class="description"><?php _e('Kích hoạt HSTS, XSS Protection, nosniff...', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="enable_audit_log"><?php _e('Audit Trail', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="enable_audit_log" name="enable_audit_log" value="1" <?php checked($main_settings['enable_audit_log'] ?? false); ?>>
+                                    <p class="description"><?php _e('Lưu lại mọi hoạt động của người dùng.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                        </table>
 
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Chặn Author Scan</label>
-                                        <span class="help">Ngăn bot dò tìm username quản trị viên.</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="block_author_scan" <?php checked($main_settings['block_author_scan'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
-
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Chặn Directory Browsing</label>
-                                        <span class="help">Ngăn người lạ duyệt file trong thư mục.</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="disable_directory_browsing" <?php checked($main_settings['disable_directory_browsing'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
-
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Tắt trình chỉnh sửa file</label>
-                                        <span class="help">Vô hiệu hóa chỉnh sửa Code trong Admin.</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="disable_file_editor" <?php checked($main_settings['disable_file_editor'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="settings-section">
-                                <h3><span class="dashicons dashicons-visibility"></span> Quyền riêng tư & Nhật ký</h3>
-
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Ẩn phiên bản WP</label>
-                                        <span class="help">Xóa bỏ dấu hiệu nhận biết phiên bản từ mã nguồn.</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="hide_wp_version" <?php checked($main_settings['hide_wp_version'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
-
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Security Headers</label>
-                                        <span class="help">Kích hoạt HSTS, XSS Protection, nosniff...</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="enable_security_headers" <?php checked($main_settings['enable_security_headers'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
-
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Audit Trail</label>
-                                        <span class="help">Lưu lại mọi hoạt động của người dùng.</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="enable_audit_log" <?php checked($main_settings['enable_audit_log'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
                         <input type="hidden" name="wps_save_settings" value="1">
-                        <div class="submit-wrap">
-                            <?php submit_button('Lưu thiết lập Hệ thống', 'primary button-hero'); ?>
-                        </div>
+                        <?php submit_button(__('Lưu thiết lập Hệ thống', 'wp-plugin-security')); ?>
                     </form>
 
                 <?php elseif ($current_tab === 'login') : ?>
                     <form method="post" action="">
                         <?php wp_nonce_field('wps_settings_action', 'wps_settings_nonce'); ?>
-                        <div class="wps-settings-grid">
-                            <div class="settings-section">
-                                <h3><span class="dashicons dashicons-admin-links"></span> Rename Login</h3>
-                                <div class="input-row">
-                                    <label>Đường dẫn đăng nhập mới</label>
-                                    <div class="slug-input-group">
-                                        <span class="prefix"><?php echo home_url('/'); ?></span>
-                                        <input type="text" name="rename_login_slug" value="<?php echo esc_attr($main_settings['rename_login_slug'] ?? ''); ?>" placeholder="vi-du: secret-login" class="regular-text">
-                                    </div>
-                                    <p class="description">Nếu để trống, plugin sẽ dùng `wp-login.php` mặc định.</p>
-                                </div>
-                            </div>
+                        <h2><?php _e('Rename Login', 'wp-plugin-security'); ?></h2>
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th scope="row"><label for="rename_login_slug"><?php _e('Đường dẫn đăng nhập mới', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <code><?php echo home_url('/'); ?></code>
+                                    <input type="text" id="rename_login_slug" name="rename_login_slug" value="<?php echo esc_attr($main_settings['rename_login_slug'] ?? ''); ?>" placeholder="vi-du: secret-login" class="regular-text">
+                                    <p class="description"><?php _e('Nếu để trống, plugin sẽ dùng `wp-login.php` mặc định.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                        </table>
 
-                            <div class="settings-section">
-                                <h3><span class="dashicons dashicons-shield-alt"></span> Brute Force Protection</h3>
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Giới hạn đăng nhập</label>
-                                        <span class="help">Khóa IP nếu đăng nhập sai nhiều lần.</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="limit_login_attempts" <?php checked($main_settings['limit_login_attempts'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Ẩn lỗi đăng nhập</label>
-                                        <span class="help">Không cho biết username hay password sai.</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="mask_login_errors" <?php checked($main_settings['mask_login_errors'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="input-grid">
-                                    <div class="input-item">
-                                        <label>Thử tối đa</label>
-                                        <input type="number" name="max_login_attempts" value="<?php echo esc_attr($main_settings['max_login_attempts'] ?? 5); ?>">
-                                    </div>
-                                    <div class="input-item">
-                                        <label>Thời gian khóa (phút)</label>
-                                        <input type="number" name="lockout_duration" value="<?php echo esc_attr($main_settings['lockout_duration'] ?? 60); ?>">
-                                    </div>
-                                </div>
-                            </div>
+                        <hr>
 
-                            <div class="settings-section">
-                                <h3><span class="dashicons dashicons-admin-users"></span> Chính sách người dùng</h3>
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <label>Mật khẩu mạnh</label>
-                                        <span class="help">Bắt buộc sử dụng 12 ký tự + ký tự đặc biệt.</span>
-                                    </div>
-                                    <label class="wps-switch">
-                                        <input type="checkbox" name="enforce_strong_password" <?php checked($main_settings['enforce_strong_password'] ?? false); ?>>
-                                        <span class="wps-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="input-row">
-                                    <label>Tự động đăng xuất khi nhàn rỗi (phút)</label>
-                                    <input type="number" name="idle_logout_time" value="<?php echo esc_attr($main_settings['idle_logout_time'] ?? 0); ?>" class="small-text">
-                                    <span class="help">0 để tắt chức năng này.</span>
-                                </div>
-                            </div>
-                        </div>
+                        <h2><?php _e('Brute Force Protection', 'wp-plugin-security'); ?></h2>
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th scope="row"><label for="limit_login_attempts"><?php _e('Giới hạn đăng nhập', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="limit_login_attempts" name="limit_login_attempts" value="1" <?php checked($main_settings['limit_login_attempts'] ?? false); ?>>
+                                    <p class="description"><?php _e('Khóa IP nếu đăng nhập sai nhiều lần.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="mask_login_errors"><?php _e('Ẩn lỗi đăng nhập', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="mask_login_errors" name="mask_login_errors" value="1" <?php checked($main_settings['mask_login_errors'] ?? false); ?>>
+                                    <p class="description"><?php _e('Không cho biết username hay password sai.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="max_login_attempts"><?php _e('Thử tối đa', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="number" id="max_login_attempts" name="max_login_attempts" value="<?php echo esc_attr($main_settings['max_login_attempts'] ?? 5); ?>" class="small-text">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="lockout_duration"><?php _e('Thời gian khóa (phút)', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="number" id="lockout_duration" name="lockout_duration" value="<?php echo esc_attr($main_settings['lockout_duration'] ?? 60); ?>" class="small-text">
+                                </td>
+                            </tr>
+                        </table>
+
+                        <hr>
+
+                        <h2><?php _e('Chính sách người dùng', 'wp-plugin-security'); ?></h2>
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th scope="row"><label for="enforce_strong_password"><?php _e('Mật khẩu mạnh', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="checkbox" id="enforce_strong_password" name="enforce_strong_password" value="1" <?php checked($main_settings['enforce_strong_password'] ?? false); ?>>
+                                    <p class="description"><?php _e('Bắt buộc sử dụng ít nhất 12 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="idle_logout_time"><?php _e('Tự động đăng xuất (phút)', 'wp-plugin-security'); ?></label></th>
+                                <td>
+                                    <input type="number" id="idle_logout_time" name="idle_logout_time" value="<?php echo esc_attr($main_settings['idle_logout_time'] ?? 0); ?>" class="small-text">
+                                    <p class="description"><?php _e('0 để tắt chức năng này.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                        </table>
+
                         <input type="hidden" name="wps_save_settings" value="1">
-                        <div class="submit-wrap">
-                            <?php submit_button('Lưu thiết lập Đăng nhập', 'primary button-hero'); ?>
-                        </div>
+                        <?php submit_button(__('Lưu thiết lập Đăng nhập', 'wp-plugin-security')); ?>
                     </form>
 
                 <?php elseif ($current_tab === 'blacklist') : ?>
                     <form method="post" action="">
                         <?php wp_nonce_field('wps_settings_action', 'wps_settings_nonce'); ?>
-                        <div class="blacklist-container">
-                            <div class="text-area-wrap">
-                                <h3>Quản lý IP bị chặn</h3>
-                                <p class="description">Mỗi địa chỉ IP nằm trên một dòng riêng biệt.</p>
-                                <textarea name="wps_blocked_ips_raw" rows="12" class="large-text code"><?php echo esc_textarea($ips_text); ?></textarea>
-                            </div>
-                            <div class="blocked-history">
-                                <h3>Nhật ký chặn tự động</h3>
-                                <div class="history-list">
+                        <div class="card" style="max-width: 100%; margin-top: 0;">
+                            <h2><?php _e('Quản lý IP bị chặn', 'wp-plugin-security'); ?></h2>
+                            <p class="description"><?php _e('Nhập mỗi địa chỉ IP hoặc dải IP CIDR trên một dòng.', 'wp-plugin-security'); ?></p>
+                            <textarea name="wps_blocked_ips_raw" rows="10" class="large-text code" style="width: 100%;"><?php echo esc_textarea($ips_text); ?></textarea>
+                        </div>
+
+                        <div class="card" style="max-width: 100%; margin-top: 20px;">
+                            <h2><?php _e('Nhật ký chặn tự động (Gần đây)', 'wp-plugin-security'); ?></h2>
+                            <table class="widefat fixed striped">
+                                <thead>
+                                    <tr>
+                                        <th width="150"><?php _e('Thời gian', 'wp-plugin-security'); ?></th>
+                                        <th width="150"><?php _e('IP', 'wp-plugin-security'); ?></th>
+                                        <th><?php _e('Lý do', 'wp-plugin-security'); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     <?php
                                     $auto_blocked = array_filter($security_logs, fn($l) => in_array($l['type'], ['ip_blocked', 'dangerous_request']));
-                                    if (empty($auto_blocked)) : echo '<p>Chưa có IP bị chặn tự động.</p>';
-                                    else : foreach (array_slice($auto_blocked, 0, 10) as $log) : ?>
-                                            <div class="history-item">
-                                                <span class="h-time"><?php echo date('H:i d/m', strtotime($log['time'])); ?></span>
-                                                <span class="h-ip"><code><?php echo $log['ip']; ?></code></span>
-                                                <span class="h-msg"><?php echo $log['message']; ?></span>
-                                            </div>
+                                    if (empty($auto_blocked)) : ?>
+                                        <tr>
+                                            <td colspan="3"><?php _e('Chưa có IP bị chặn tự động.', 'wp-plugin-security'); ?></td>
+                                        </tr>
+                                    <?php else : foreach (array_slice(array_reverse($auto_blocked), 0, 10) as $log) : ?>
+                                            <tr>
+                                                <td><?php echo date('H:i d/m/Y', strtotime($log['time'])); ?></td>
+                                                <td><code><?php echo esc_html($log['ip']); ?></code></td>
+                                                <td><?php echo esc_html($log['message']); ?></td>
+                                            </tr>
                                     <?php endforeach;
                                     endif; ?>
-                                </div>
-                            </div>
+                                </tbody>
+                            </table>
                         </div>
                         <input type="hidden" name="wps_save_settings" value="1">
-                        <?php submit_button('Cập nhật danh sách đen'); ?>
+                        <?php submit_button(__('Cập nhật Blacklist', 'wp-plugin-security')); ?>
                     </form>
 
                 <?php elseif ($current_tab === 'audit') : ?>
-                    <div class="audit-wrapper">
-                        <table class="wp-list-table widefat fixed striped wps-table">
-                            <thead>
+                    <h2><?php _e('Lịch sử hoạt động (Audit Trail)', 'wp-plugin-security'); ?></h2>
+                    <table class="wp-list-table widefat fixed striped">
+                        <thead>
+                            <tr>
+                                <th width="150"><?php _e('Thời gian', 'wp-plugin-security'); ?></th>
+                                <th width="150"><?php _e('Người dùng', 'wp-plugin-security'); ?></th>
+                                <th width="120"><?php _e('Hành động', 'wp-plugin-security'); ?></th>
+                                <th><?php _e('Chi tiết', 'wp-plugin-security'); ?></th>
+                                <th width="150"><?php _e('Địa chỉ IP', 'wp-plugin-security'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($audit_logs)) : ?>
                                 <tr>
-                                    <th width="120">Thời gian</th>
-                                    <th width="150">Người dùng</th>
-                                    <th width="120">Hành động</th>
-                                    <th>Thông tin chi tiết</th>
-                                    <th width="120">Địa chỉ IP</th>
+                                    <td colspan="5"><?php _e('Chưa có hoạt động nào được ghi lại.', 'wp-plugin-security'); ?></td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($audit_logs)) : ?>
+                            <?php else : foreach (array_reverse($audit_logs) as $log) : ?>
                                     <tr>
-                                        <td colspan="5">Chưa có hoạt động nào được ghi lại.</td>
+                                        <td><small><?php echo date('d/m/Y H:i:s', strtotime($log['time'] ?? 'now')); ?></small></td>
+                                        <td><strong><?php echo esc_html($log['user'] ?? 'Guest'); ?></strong></td>
+                                        <td>
+                                            <?php
+                                            $action = strtolower($log['action'] ?? 'info');
+                                            $color = '#64748b';
+                                            if (strpos($action, 'login') !== false) $color = '#10b981';
+                                            if (strpos($action, 'failed') !== false || strpos($action, 'blocked') !== false) $color = '#ef4444';
+                                            ?>
+                                            <span style="background: <?php echo $color; ?>; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase;">
+                                                <?php echo esc_html($log['action'] ?? 'INFO'); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo esc_html($log['message'] ?? ''); ?></td>
+                                        <td><code><?php echo esc_html($log['ip'] ?? '0.0.0.0'); ?></code></td>
                                     </tr>
-                                    <?php else : foreach ($audit_logs as $log) : ?>
-                                        <tr>
-                                            <td><small><?php echo date('H:i:s d/m', strtotime($log['time'] ?? 'now')); ?></small></td>
-                                            <td><strong><?php echo esc_html($log['user'] ?? 'Guest'); ?></strong></td>
-                                            <td><span class="act-badge b-<?php echo strtolower($log['action'] ?? 'info'); ?>"><?php echo esc_html($log['action'] ?? 'INFO'); ?></span></td>
-                                            <td><?php echo esc_html($log['message'] ?? ''); ?></td>
-                                            <td><code><?php echo esc_html($log['ip'] ?? '0.0.0.0'); ?></code></td>
-                                        </tr>
-                                <?php endforeach;
-                                endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            <?php endforeach;
+                            endif; ?>
+                        </tbody>
+                    </table>
 
                 <?php elseif ($current_tab === 'tools') : ?>
-                    <div class="wps-tools-grid">
-                        <div class="tool-card danger">
-                            <span class="dashicons dashicons-warning"></span>
-                            <h3>Ngắt toàn bộ phiên làm việc</h3>
-                            <p>Đăng xuất tất cả người dùng ngay lập tức (bao gồm cả bạn). Sử dụng nếu nghi ngờ có người lạ xâm nhập.</p>
-                            <form method="post" action="" onsubmit="return confirm('Bạn sẽ bị đăng xuất ngay lập tức. Tiếp tục?');">
-                                <?php wp_nonce_field('wps_tool_nonce_action', 'wps_tool_nonce'); ?>
-                                <input type="hidden" name="wps_tool_action" value="kill_sessions">
-                                <button type="submit" class="button button-link-delete">Kích hoạt Logout All</button>
-                            </form>
-                        </div>
+                    <h2><?php _e('Công cụ bảo mật khẩn cấp', 'wp-plugin-security'); ?></h2>
+                    <div class="card" style="border-left: 4px solid #d63638;">
+                        <h3><?php _e('Ngắt toàn bộ phiên làm việc', 'wp-plugin-security'); ?></h3>
+                        <p><?php _e('Đăng xuất tất cả người dùng ngay lập tức (bao gồm cả bạn). Sử dụng nếu nghi ngờ có người lạ xâm nhập trái phép.', 'wp-plugin-security'); ?></p>
+                        <form method="post" action="" onsubmit="return confirm('Bạn sẽ bị đăng xuất ngay lập tức. Tiếp tục?');">
+                            <?php wp_nonce_field('wps_tool_nonce_action', 'wps_tool_nonce'); ?>
+                            <input type="hidden" name="wps_tool_action" value="kill_sessions">
+                            <button type="submit" class="button button-link-delete" style="color: #d63638;"><?php _e('Kích hoạt Logout All', 'wp-plugin-security'); ?></button>
+                        </form>
+                    </div>
 
-                        <div class="tool-card critical">
-                            <span class="dashicons dashicons-update"></span>
-                            <h3>Reset mật khẩu toàn website</h3>
-                            <p>Vô hiệu hóa toàn bộ mật khẩu hiện tại. Người dùng sẽ phải thực hiện "Quên mật khẩu" để truy cập lại.</p>
-                            <form method="post" action="" onsubmit="return confirm('HƯ HẠI NẶNG: Toàn bộ mật khẩu sẽ bị xóa. Tiếp tục?');">
-                                <?php wp_nonce_field('wps_tool_nonce_action', 'wps_tool_nonce'); ?>
-                                <input type="hidden" name="wps_tool_action" value="force_pw_reset">
-                                <button type="submit" class="button button-link-delete">Kích hoạt Reset Pass Toàn diện</button>
-                            </form>
-                        </div>
+                    <div class="card" style="border-left: 4px solid #d63638; margin-top: 20px;">
+                        <h3><?php _e('Reset mật khẩu toàn website', 'wp-plugin-security'); ?></h3>
+                        <p><?php _e('Vô hiệu hóa toàn bộ mật khẩu hiện tại. Tất cả người dùng (bao gồm admin) sẽ phải dùng chức năng "Quên mật khẩu" để đặt lại mật khẩu mới.', 'wp-plugin-security'); ?></p>
+                        <form method="post" action="" onsubmit="return confirm('CẢNH BÁO NGUY HIỂM: Toàn bộ mật khẩu sẽ bị vô hiệu hóa. Tiếp tục?');">
+                            <?php wp_nonce_field('wps_tool_nonce_action', 'wps_tool_nonce'); ?>
+                            <input type="hidden" name="wps_tool_action" value="force_pw_reset">
+                            <button type="submit" class="button button-link-delete" style="color: #d63638;"><?php _e('Kích hoạt Reset Pass Toàn diện', 'wp-plugin-security'); ?></button>
+                        </form>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
-
-        <style>
-            :root {
-                --wps-primary: #6366f1;
-                --wps-success: #10b981;
-                --wps-danger: #ef4444;
-                --wps-border: #e2e8f0;
-                --wps-bg: #ffffff;
-            }
-
-            .wps-admin-wrap {
-                margin: 20px 20px 0 0;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            }
-
-            /* Header Style */
-            .wps-header {
-                background: #fff;
-                padding: 30px;
-                border-radius: 12px;
-                margin-bottom: 25px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            }
-
-            .wps-brand {
-                display: flex;
-                align-items: center;
-                gap: 20px;
-            }
-
-            .wps-brand .dashicons {
-                font-size: 40px;
-                width: 40px;
-                height: 40px;
-                color: var(--wps-primary);
-            }
-
-            .wps-brand h1 {
-                margin: 0;
-                font-size: 24px;
-                font-weight: 700;
-                color: #1e293b;
-            }
-
-            .v-badge {
-                font-size: 12px;
-                background: #f1f5f9;
-                padding: 2px 8px;
-                border-radius: 4px;
-                color: #64748b;
-            }
-
-            /* Tabs Custom */
-            .wps-tabs {
-                border: none !important;
-                margin-bottom: 0 !important;
-                gap: 5px;
-                background: transparent !important;
-            }
-
-            .wps-tabs .nav-tab {
-                border: none !important;
-                background: #e2e8f0 !important;
-                color: #64748b !important;
-                border-radius: 8px 8px 0 0 !important;
-                padding: 12px 20px !important;
-                display: flex !important;
-                align-items: center !important;
-                gap: 8px !important;
-                transition: all 0.2s;
-                margin: 0 !important;
-            }
-
-            .wps-tabs .nav-tab-active {
-                background: #fff !important;
-                color: var(--wps-primary) !important;
-                font-weight: 600 !important;
-            }
-
-            .wps-tabs .nav-tab:hover {
-                background: #cbd5e1 !important;
-            }
-
-            /* Content Box */
-            .wps-content-box {
-                background: #fff;
-                min-height: 400px;
-                padding: 40px;
-                border-radius: 0 12px 12px 12px;
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            }
-
-            /* Switch Style */
-            .wps-switch {
-                position: relative;
-                display: inline-block;
-                width: 44px;
-                height: 24px;
-            }
-
-            .wps-switch input {
-                opacity: 0;
-                width: 0;
-                height: 0;
-            }
-
-            .wps-slider {
-                position: absolute;
-                cursor: pointer;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-color: #cbd5e1;
-                transition: .3s;
-                border-radius: 34px;
-            }
-
-            .wps-slider:before {
-                position: absolute;
-                content: "";
-                height: 18px;
-                width: 18px;
-                left: 3px;
-                bottom: 3px;
-                background-color: white;
-                transition: .3s;
-                border-radius: 50%;
-            }
-
-            input:checked+.wps-slider {
-                background-color: var(--wps-success);
-            }
-
-            input:checked+.wps-slider:before {
-                transform: translateX(20px);
-            }
-
-            /* Grid & Rows */
-            .wps-settings-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 40px;
-            }
-
-            .settings-section h3 {
-                border-bottom: 1px solid #f1f5f9;
-                padding-bottom: 15px;
-                margin-bottom: 25px;
-                color: #1e293b;
-                font-size: 18px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-
-            .setting-row {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                margin-bottom: 20px;
-                padding: 10px 0;
-            }
-
-            .setting-info label {
-                display: block;
-                font-weight: 600;
-                color: #334155;
-                margin-bottom: 4px;
-            }
-
-            .setting-info .help {
-                font-size: 12px;
-                color: #94a3b8;
-            }
-
-            /* Inputs */
-            .input-grid {
-                display: flex;
-                gap: 20px;
-                margin-top: 20px;
-                background: #f8fafc;
-                padding: 15px;
-                border-radius: 8px;
-            }
-
-            .input-item label {
-                display: block;
-                font-size: 11px;
-                color: #64748b;
-                text-transform: uppercase;
-                margin-bottom: 5px;
-            }
-
-            .input-item input {
-                border: 1px solid #cbd5e1;
-                border-radius: 4px;
-                padding: 5px 10px;
-                width: 80px;
-            }
-
-            .slug-input-group {
-                display: flex;
-                align-items: center;
-                border: 1px solid #cbd5e1;
-                border-radius: 6px;
-                overflow: hidden;
-            }
-
-            .slug-input-group .prefix {
-                background: #f1f5f9;
-                padding: 10px;
-                border-right: 1px solid #cbd5e1;
-                color: #64748b;
-                font-size: 13px;
-            }
-
-            .slug-input-group input {
-                border: none !important;
-                box-shadow: none !important;
-                padding: 10px;
-                flex: 1;
-            }
-
-            /* Blacklist */
-            .blacklist-container {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 30px;
-            }
-
-            .history-list {
-                background: #f8fafc;
-                border-radius: 8px;
-                padding: 15px;
-                max-height: 300px;
-                overflow-y: auto;
-            }
-
-            .history-item {
-                display: flex;
-                gap: 10px;
-                padding: 8px 0;
-                border-bottom: 1px solid #e2e8f0;
-                font-size: 12px;
-            }
-
-            .h-time {
-                color: #94a3b8;
-                width: 80px;
-            }
-
-            .h-ip {
-                color: var(--wps-primary);
-                font-weight: 600;
-            }
-
-            /* Table */
-            .wps-table {
-                border: none !important;
-            }
-
-            .wps-table thead th {
-                background: #f8fafc !important;
-                color: #64748b !important;
-                font-weight: 600 !important;
-                text-transform: uppercase;
-                font-size: 11px;
-                padding: 15px !important;
-            }
-
-            .act-badge {
-                background: #f1f5f9;
-                padding: 4px 8px;
-                border-radius: 4px;
-                font-weight: 700;
-                font-size: 10px;
-                color: #64748b;
-            }
-
-            .b-login {
-                background: #dcfce7;
-                color: #166534;
-            }
-
-            .b-post_update {
-                background: #dbeafe;
-                color: #1e40af;
-            }
-
-            .b-theme_change {
-                background: #fef9c3;
-                color: #854d0e;
-            }
-
-            /* Tools */
-            .wps-tools-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 20px;
-            }
-
-            .tool-card {
-                border: 1px solid #fee2e2;
-                padding: 30px;
-                border-radius: 12px;
-                text-align: center;
-                transition: 0.3s;
-            }
-
-            .tool-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            }
-
-            .tool-card.danger {
-                border-color: var(--wps-danger);
-            }
-
-            .tool-card.danger h3 {
-                color: var(--wps-danger);
-            }
-
-            .tool-card span {
-                font-size: 48px;
-                color: var(--wps-danger);
-                height: auto;
-                width: auto;
-            }
-
-            .tool-card.critical {
-                border-color: #ffedd5;
-            }
-
-            .tool-card.critical span {
-                color: #f59e0b;
-            }
-
-            .tool-card h3 {
-                margin: 20px 0 10px;
-            }
-        </style>
 <?php
     }
 }
-
 // Copyright by AcmaTvirus
