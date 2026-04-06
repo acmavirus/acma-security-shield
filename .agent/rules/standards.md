@@ -1,30 +1,41 @@
-# Tiêu chuẩn lập trình & Bảo mật (Standards)
+# Standards cho `WP Plugin Security`
 
-Quy định bắt buộc đối với tất cả các thao tác trên plugin **wppluginsecurity**.
+Các quy định dưới đây áp dụng cho mọi thay đổi trong plugin.
 
-## 1. Tiêu chuẩn Mã nguồn (PHP/WordPress)
-- **Namespace**: Không dùng namespace chính thức, dùng tiền tố `wppluginsecurity_` cho mọi hàm.
-- **Data Sanitization**: Mọi dữ liệu từ `$_POST`, `$_GET` phải dùng: `sanitize_text_field`, `absint`, `wp_unslash`.
-- **Global Objects**: Sử dụng `$wppluginsecurity_options` (global) để truy cập cấu hình.
-- **Hook Priorities**: 
-  - `admin_menu`: 10.
-  - `admin_init`: 10.
-  - `wp_head`/`wp_footer`: 10-20.
+## 1. Ngôn ngữ và kiến trúc
+- Dùng namespace `Acma\\WpSecurity` theo PSR-4.
+- Giữ controller, service, view tách biệt rõ ràng.
+- Không quay lại kiến trúc `inc/` kiểu cũ nếu không có yêu cầu migration cụ thể.
 
-## 2. Tiêu chuẩn Bảo mật (Security)
-- **TUYỆT ĐỐI CẤM**: Gửi bất kỳ dữ liệu cá nhân (email, URL, pass) ra bên ngoài server người dùng.
-- **TUYỆT ĐỐI CẤM**: Tạo tài khoản ẩn, hoặc ẩn user hiện thời (`pre_user_query`).
-- **TUYỆT ĐỐI CẤM**: Ẩn dấu vết plugin khỏi danh sách quản lý.
-- **Validation**: Mọi input từ giao diện Admin phải qua hàm `register_setting` của WordPress.
+## 2. PHP và WordPress
+- Mọi input từ `$_GET`, `$_POST`, `$_REQUEST` phải được kiểm tra capability, nonce, và sanitize đúng kiểu dữ liệu.
+- Dùng `wp_unslash()` trước khi sanitize chuỗi từ request.
+- Ưu tiên `sanitize_text_field`, `sanitize_textarea_field`, `absint`, `sanitize_key`, `esc_url_raw`.
+- Khi lưu settings mới, giữ khóa option nhất quán với `wps_main_settings`.
+- Hooks phải dùng tên rõ ràng, tránh đụng vào hook không tồn tại.
 
-## 3. Tiêu chuẩn Giao diện (Aesthetics)
-- **Color Palette**: 
-  - Chính: `#1167ad` (Blue).
-  - Phụ: `#003b6b` (Dark Blue).
-  - Warning: `#c30000` (Red).
-- **Typography**: Ưu tiên font hệ thống WordPress hoặc Google Fonts (Kanit, Inter).
-- **Layout**: Sử dụng Tabbed interface trong Admin dashboard.
+## 3. Security
+- Không thêm luồng ẩn dữ liệu ra ngoài.
+- Mọi tích hợp ngoài như Google, SMTP, Telegram, reCAPTCHA, update metadata phải là opt-in hoặc có cấu hình rõ ràng.
+- Không bỏ qua capability checks trong trang admin hoặc AJAX.
+- Không dùng logic che giấu admin/user ngoài phạm vi tính năng đã được mô tả trong plugin.
 
-## 4. Hiệu năng (Performance)
-- Chỉ `wp_enqueue_script`/`style` khi thực sự cần thiết (Vd: chỉ load media uploader ở trang option).
-- Sử dụng `wp_cache_delete` khi cập nhật option để tránh lag object cache.
+## 4. UI và content
+- UI admin phải giữ phong cách tabbed dashboard hiện có.
+- Tất cả chuỗi giao diện phải là UTF-8 sạch, không mojibake.
+- Giữ văn phong tiếng Việt nhất quán trong nhãn và mô tả.
+
+## 5. Option và dữ liệu
+- Cấu hình trung tâm: `wps_main_settings`.
+- Dữ liệu runtime/nhật ký phải dùng option chuyên biệt phù hợp mục đích.
+- Tránh tạo bảng mới nếu option là đủ.
+
+## 6. Kiểm thử và sửa lỗi
+- Sau khi chỉnh text hoặc controller, chạy `php -l` cho file đã sửa.
+- Khi sửa UI string, kiểm tra lại mã hóa để tránh `Ã`, `�`, hoặc ký tự lỗi.
+- Nếu thay đổi hook runtime, xác nhận không phá logic tab admin hoặc AJAX action hiện có.
+
+## 7. Nguyên tắc làm việc
+- Code là nguồn sự thật.
+- Tài liệu agent phải bám theo source hiện tại, không bám theo changelog tưởng tượng.
+- Nếu phát hiện file vừa đúng cú pháp vừa sai encoding, ưu tiên sửa encoding trước khi suy luận lỗi logic.

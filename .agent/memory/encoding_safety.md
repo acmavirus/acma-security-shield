@@ -1,21 +1,24 @@
 # Encoding Safety Note
 
-## Problem
-Several admin UI strings in `src/Controllers/AdminController.php` were corrupted because UTF-8 source text was round-tripped through non-UTF-8 handling in the shell/editor pipeline.
+## Vấn đề đã thấy trong repo
+- Nhiều file tài liệu và một số chuỗi giao diện có dấu hiệu mojibake do UTF-8 bị đọc/ghi qua encoding không phù hợp.
 
-## Root Cause
-- PHP source files must stay UTF-8.
-- Avoid reading/writing them through ANSI/CP1252 or any implicit terminal encoding conversion.
-- Mixed edits across multiple passes can leave the file syntactically valid but textually broken.
+## Nguyên tắc sửa
+1. Luôn giữ file source và tài liệu ở UTF-8.
+2. Sửa text bằng `apply_patch` hoặc editor UTF-8-safe.
+3. Không round-trip nội dung PHP/Markdown qua ANSI/CP1252.
+4. Nếu chỉ là tài liệu, sửa trực tiếp phần bị lỗi thay vì thay toàn bộ file bằng cách đoán lại encoding.
 
-## Prevention Rules
-1. Edit PHP source with `apply_patch` or another UTF-8-safe editor only.
-2. Never normalize source text through PowerShell byte conversions unless the encoding is explicitly controlled.
-3. After large text edits, verify the file content by searching for mojibake markers such as `Ã`, `Ä`, `Æ`, `ï¿½`.
-4. Run `php -l` after every edit batch.
-5. If UI text still appears stale after a source fix, invalidate opcache or restart PHP/Laragon before assuming the source is still broken.
+## Dấu hiệu cần kiểm tra
+- `Ã`, `�`, `Â`, `Ä`, `Å`, `Ã©`, `Ãª`, `Ã¹`.
+- Chuỗi tiếng Việt bị biến thành ký tự rời hoặc dấu hỏi.
 
-## Recovery Checklist
-- Restore the affected file to pure UTF-8.
-- Replace the corrupted strings directly, not through a full-file encoding roundtrip.
-- Recheck the file content, not just syntax.
+## Checklist sau khi sửa
+- Mở lại file để xác nhận văn bản đọc tự nhiên.
+- Nếu sửa PHP, chạy `php -l`.
+- Nếu thay UI string, kiểm tra thêm opcache hoặc cache trình duyệt nếu nội dung vẫn hiển thị cũ.
+
+## Ghi nhớ
+- Không normalize Unicode không liên quan.
+- Không sửa lan ra toàn bộ repo khi chỉ một file bị lỗi.
+- Ưu tiên phục hồi đúng nội dung gốc của plugin hơn là “viết lại cho đẹp” mà làm lệch ý nghĩa.

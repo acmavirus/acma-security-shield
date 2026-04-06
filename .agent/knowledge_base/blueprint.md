@@ -1,43 +1,84 @@
-# Bản thiết kế kiến trúc wppluginsecurity (Blueprint)
+# Blueprint kiến trúc `WP Plugin Security`
 
-Tài liệu này chứa toàn bộ sơ đồ cấu trúc của plugin **wppluginsecurity** (Version 2.5.3) - Phiên bản đã được "Clean" sạch mã theo dõi.
+Tài liệu này phản ánh cấu trúc thực tế của plugin ở thời điểm hiện tại.
 
-## 1. File Entry (wppluginsecurity.php)
-- Khai báo hằng số môi trường (wppluginsecurity_DIR, wppluginsecurity_URL...).
-- Load các module core và giao diện quản trị.
-- Action hooks: `plugins_loaded`, `admin_menu`, `admin_enqueue_scripts`, `wp_enqueue_scripts`.
+## 1. Entry point
+- `wp-plugin-security.php`
+- Nhiệm vụ:
+  - chặn truy cập trực tiếp,
+  - khai báo hằng plugin,
+  - nạp autoloader Composer,
+  - bootstrap lớp `Acma\\WpSecurity\\Plugin`.
 
-## 2. Các Module Code (inc/)
-Toàn bộ logic nghiệp vụ nằm trong thư mục `inc/` với 24 module độc lập:
-1.  **`ads.php`**: Quản lý hình ảnh/script quảng cáo.
-2.  **`chat.php`**: Tạo bong bóng liên hệ (10+ mạng xã hội), 5 skins.
-3.  **`clean.php`**: Tối ưu database, xóa revisions, bình luận rác.
-4.  **`code.php`**: Module chèn Custom CSS, JS, Header/Footer Scripts.
-5.  **`custom.php`**: Tùy chỉnh màu sắc admin panel, favicon, logo đăng nhập.
-6.  **`debug.php`**: Gỡ lỗi hệ thống.
-7.  **`font.php`**: Tùy biến font chữ Google Fonts.
-8.  **`wppluginsecurity.php`**: Lõi xử lý form Admin, chứa mảng global `$wppluginsecurity_options` và `wppluginsecurity_get_admin_users`.
-9.  **`gindex.php`**: API Lập chỉ mục Google nhanh (Google Indexing API).
-10. **`goo.php`**: Tích hợp Google Social Login và reCAPTCHA v2/v3.
-11. **`mail.php`**: Cấu hình SMTP, gửi thông báo bình luận, chào mừng user.
-12. **`main.php`**: Xử lý logic Duplicate bài viết, Table of Contents (hook vào content).
-13. **`media.php`**: Quản lý giới hạn tải lên, tự resize kích thước.
-14. **`notify.php`**: Thanh thông báo Top Bar, khuyến mãi.
-15. **`post.php`**: SEO Links (xóa /category/, thêm .html), tự động lấy ảnh ngoài (cURL) về làm Featured Image.
-16. **`redirects.php`**: Redirect URL (301/302).
-17. **`scuri.php`**: Bảo mật WP (tắt JSON API, XML-RPC, ẩn phiên bản, lọc file upload, giới hạn URI).
-18. **`search.php`**: Search & Replace Database (Domain migration tool).
-19. **`shortcode.php`**: Tạo các mã rút gọn tùy chọn.
-20. **`speed.php`**: Minify HTML/CSS/JS, Defer/Async, tắt Emojis, Lazy load.
-21. **`toc.php`**: Khởi tạo cấu trúc Table Of Contents cơ bản.
-22. **`tool.php`**: Trình soạn thảo Classic, mở rộng TinyMCE (Mô tả chuyên mục, nút Format), chặn cập nhật (WP/Themes/Plugins), chặn copy bài.
-23. **`user.php`**: Quản lý Role (ẩn wp-admin với user thường, tắt admin-bar), Upload local Avatar, chia tách danh sách Media/Post theo User_ID.
-24. **`woo.php`**: Tùy biến text "Add to Cart", đổi định dạng tiền tệ, cấu hình giá "Liên hệ" khi giá = 0, thông báo đơn hàng Telegram.
+## 2. Lõi khởi động
+- `src/Plugin.php`
+- Nhiệm vụ:
+  - nạp textdomain,
+  - khởi tạo các controller chính,
+  - bảo đảm plugin hoạt động theo mô hình singleton.
 
-## 3. Cấu trúc Giao diện Admin (main/)
-- **`admin.php`**: View tabbed interface.
-- Quản lý tab (12 tab): `1speed.php`, `2scuri.php`, `3tool.php`, `4main.php`, `5media.php`, `6post.php`, `7mail.php`, `8woo.php`, `9user.php`, `10custom.php`, `11google.php`, `12chat.php`.
+## 3. Controllers
+- `src/Controllers/AdminController.php`
+  - tạo trang quản trị,
+  - đăng ký settings,
+  - render shell UI và các tab.
+- `src/Controllers/SecurityController.php`
+  - hardening, login protection, headers, audit hooks.
+- `src/Controllers/FeatureController.php`
+  - tối ưu frontend, TOC, preload, CDN rewrite, featured image, editor/update controls.
+- `src/Controllers/IntegrationController.php`
+  - SMTP, notification bar, code injection, redirects, login integrations, Google, WooCommerce.
+- `src/Controllers/MonitoringController.php`
+  - cron scan, integrity/malware/vulnerability scan, quarantine, restore.
+- `src/Controllers/SeoAiController.php`
+  - metabox SEO AI, Rank Math sync, Gemini/Bulk scan.
+- `src/Controllers/SeoContentController.php`
+  - rewrite nội dung theo AI khi lưu bài và bulk queue/process.
+- `src/Controllers/UpdateController.php`
+  - kiểm tra cập nhật plugin và metadata của release.
+- `src/Controllers/UserController.php`
+  - user isolation, local avatar, user ID column, 2FA/profile helpers.
 
-## 4. Hệ Database (Data Model)
-- Lưu 1 array JSON serialized duy nhất ở Option: `wppluginsecurity_settings`, `wppluginsecurity_code_settings`, `wppluginsecurity_gindex_options`.
-- Không gọi Database bổ sung, dùng `get_option` và biến Global để kiểm tra điều kiện.
+## 4. Services
+- `src/Services/SecurityService.php`
+  - đọc option, log sự kiện, hỗ trợ logic security runtime.
+- `src/Services/AuditService.php`
+  - ghi và truy xuất audit logs.
+- `src/Services/UpdateService.php`
+  - truy vấn version từ nguồn remote và hỗ trợ update flow.
+
+## 5. Views
+- `src/Views/admin-page.php`
+  - layout chính của admin dashboard.
+- `src/Views/admin/tabs/*.php`
+  - mỗi tab là một view riêng, render theo tên tab.
+
+## 6. Tab map hiện tại
+- `general`: hệ thống & WAF.
+- `login`: đăng nhập.
+- `blacklist`: danh sách chặn IP.
+- `audit`: nhật ký kiểm tra.
+- `monitoring`: giám sát.
+- `speed`: tốc độ.
+- `updates`: cập nhật.
+- `seo`: SEO & mục lục.
+- `seo_ai`: SEO AI.
+- `seo_content_ai`: SEO Content AI.
+- `editor`: trình soạn thảo.
+- `google`: Google.
+- `email`: Email.
+- `users`: người dùng.
+- `woocommerce`: WooCommerce.
+- `marketing`: marketing và helper.
+- `tools`: công cụ khẩn cấp.
+- `changelog`: nhật ký thay đổi.
+
+## 7. Storage model
+- Cấu hình chính nằm trong `wps_main_settings`.
+- Dữ liệu runtime bổ sung nằm trong các option chuyên biệt như `wps_blocked_ips`, `wps_audit_logs`, `wps_security_logs`, `wps_monitoring_quarantine_map`.
+- Dữ liệu lớn nên được serialize bằng option thay vì tạo bảng mới trừ khi có yêu cầu thiết kế rõ ràng.
+
+## 8. Ghi chú kiến trúc
+- Đây là plugin có phạm vi rộng: security, performance, SEO, integrations, user management, WooCommerce.
+- Không còn cấu trúc `inc/`, `main/`, `modal/`, `link/` như tài liệu cũ.
+- Không nên giữ các tên hook hoặc option giả không tồn tại trong code hiện tại.
