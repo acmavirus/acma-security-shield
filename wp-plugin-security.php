@@ -24,6 +24,19 @@ if (!defined('WPS_PLUGIN_FILE')) {
     define('WPS_PLUGIN_FILE', __FILE__);
 }
 
+if (function_exists('opcache_invalidate')) {
+    @opcache_invalidate(__FILE__, true);
+    $plugin_dir = __DIR__;
+    foreach ([
+        $plugin_dir . '/src/Plugin.php',
+        $plugin_dir . '/src/Controllers/AdminController.php',
+        $plugin_dir . '/src/Controllers/SecurityController.php',
+        $plugin_dir . '/src/Controllers/MonitoringController.php',
+    ] as $cached_file) {
+        @opcache_invalidate($cached_file, true);
+    }
+}
+
 // Load Composer autoloader.
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require_once __DIR__ . '/vendor/autoload.php';

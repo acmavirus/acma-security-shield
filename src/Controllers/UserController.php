@@ -3,13 +3,18 @@
 
 namespace Acma\WpSecurity\Controllers;
 
+use Acma\WpSecurity\Services\SecurityService;
+
 /**
  * Controller cho user isolation, avatar local va hien thi User ID.
  */
 class UserController
 {
+    private $security_service;
+
     public function __construct()
     {
+        $this->security_service = new SecurityService();
         add_action('admin_init', [$this, 'restrict_admin_access']);
         add_action('pre_get_posts', [$this, 'limit_posts_to_owner']);
         add_filter('ajax_query_attachments_args', [$this, 'limit_media_to_owner']);
@@ -19,6 +24,11 @@ class UserController
         add_action('personal_options_update', [$this, 'save_avatar_field']);
         add_action('edit_user_profile_update', [$this, 'save_avatar_field']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_profile_media']);
+
+        add_action('show_user_profile', [$this, 'render_two_factor_field']);
+        add_action('edit_user_profile', [$this, 'render_two_factor_field']);
+        add_action('personal_options_update', [$this, 'save_two_factor_field']);
+        add_action('edit_user_profile_update', [$this, 'save_two_factor_field']);
 
         add_filter('get_avatar', [$this, 'filter_local_avatar'], 20, 6);
         add_filter('manage_users_columns', [$this, 'add_user_id_column']);
@@ -156,6 +166,88 @@ class UserController
             update_user_meta($user_id, 'wps_local_avatar', $avatar_url);
         } else {
             delete_user_meta($user_id, 'wps_local_avatar');
+        }
+    }
+
+    /**
+     * Hiển thị cài đặt 2FA trong hồ sơ user.
+     */
+    public function render_two_factor_field($user)
+    {
+        if (!$this->get_setting('enable_two_factor', false)) {
+            return;
+        }
+
+        if (!current_user_can('edit_user', $user->ID)) {
+            return;
+        }
+
+        $enabled = (bool) get_user_meta($user->ID, 'wps_2fa_enabled', true);
+        $secret = $this->security_service->get_two_factor_secret($user->ID);
+        if ($enabled && $secret === '') {
+            $secret = $this->security_service->generate_two_factor_secret();
+            update_user_meta($user->ID, 'wps_2fa_secret', $secret);
+        }
+
+        $issuer = get_bloginfo('name');
+        $uri = $secret !== '' ? $this->security_service->get_two_factor_provisioning_uri($issuer, $user->user_login, $secret) : '';
+        ?>
+        <h2><?php esc_html_e('Xác thực 2 lớp', 'wp-plugin-security'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Bật 2FA', 'wp-plugin-security'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="wps_2fa_enabled" value="1" <?php checked($enabled); ?>>
+                        <?php esc_html_e('Yêu cầu mã xác thực 2FA khi đăng nhập', 'wp-plugin-security'); ?>
+                    </label>
+                    <p class="description"><?php esc_html_e('Mã 2FA sẽ được kiểm tra trên form đăng nhập bằng ứng dụng như Google Authenticator hoặc Authy.', 'wp-plugin-security'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Secret 2FA', 'wp-plugin-security'); ?></th>
+                <td>
+                    <input type="text" class="regular-text code" name="wps_2fa_secret" value="<?php echo esc_attr($secret); ?>" autocomplete="off">
+                    <p class="description"><?php esc_html_e('Quét thủ công hoặc nhập secret này vào ứng dụng authenticator của bạn.', 'wp-plugin-security'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('URI cài đặt', 'wp-plugin-security'); ?></th>
+                <td>
+                    <input type="text" class="large-text code" readonly value="<?php echo esc_attr($uri); ?>">
+                    <p class="description"><?php esc_html_e('Có thể dùng URI này cho QR code bên ngoài hoặc nhập trực tiếp.', 'wp-plugin-security'); ?></p>
+                </td>
+            </tr>
+        </table>
+        <?php
+    }
+
+    /**
+     * Lưu 2FA của user.
+     */
+    public function save_two_factor_field($user_id)
+    {
+        if (!$this->get_setting('enable_two_factor', false)) {
+            return;
+        }
+
+        if (!current_user_can('edit_user', $user_id)) {
+            return;
+        }
+
+        $enabled = isset($_POST['wps_2fa_enabled']);
+        $secret = sanitize_text_field($_POST['wps_2fa_secret'] ?? '');
+
+        if ($enabled && $secret === '') {
+            $secret = $this->security_service->generate_two_factor_secret();
+        }
+
+        if ($enabled) {
+            update_user_meta($user_id, 'wps_2fa_enabled', 1);
+            update_user_meta($user_id, 'wps_2fa_secret', $secret);
+        } else {
+            delete_user_meta($user_id, 'wps_2fa_enabled');
+            delete_user_meta($user_id, 'wps_2fa_secret');
         }
     }
 

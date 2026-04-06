@@ -37,8 +37,10 @@ class SecurityController
         add_action('init', [$this, 'handle_rename_login']);
         add_filter('site_url', [$this, 'fix_login_urls'], 10, 4);
         add_filter('network_site_url', [$this, 'fix_login_urls'], 10, 4);
+        add_action('login_form', [$this, 'render_two_factor_field']);
 
         add_action('init', [$this, 'handle_idle_logout']);
+        add_action('template_redirect', [$this, 'handle_404_monitoring'], 1);
         add_filter('wp_headers', [$this, 'add_security_headers']);
 
         if ($this->security_service->get_setting('disable_xmlrpc', true)) {
@@ -74,6 +76,7 @@ class SecurityController
 
         add_action('wp_login_failed', [$this, 'handle_failed_login']);
         add_filter('authenticate', [$this, 'check_login_lockout'], 30, 3);
+        add_filter('authenticate', [$this, 'check_two_factor_code'], 40, 3);
 
         if ($this->security_service->get_setting('enforce_strong_password', true)) {
             add_action('user_profile_update_errors', [$this, 'check_strong_password'], 10, 3);
@@ -225,6 +228,22 @@ class SecurityController
             $this->security_service->log_event('dangerous_request', sprintf(__('Phát hiện request nguy hiểm từ IP %s', 'wp-plugin-security'), $user_ip));
             wp_die(__('Phát hiện hành vi nguy hiểm!', 'wp-plugin-security'), __('Cảnh báo bảo mật', 'wp-plugin-security'), ['response' => 400]);
         }
+
+        if ($this->security_service->should_block_uploads_php_request()) {
+            $this->security_service->log_event('uploads_php_blocked', sprintf(__('Chặn request PHP trong uploads từ IP %s', 'wp-plugin-security'), $user_ip), $user_ip);
+            wp_die(__('Truy cập file PHP trong uploads đã bị chặn.', 'wp-plugin-security'), __('Cảnh báo bảo mật', 'wp-plugin-security'), ['response' => 403]);
+        }
+
+        if ($this->security_service->is_geo_blocked($user_ip)) {
+            $country_code = $this->security_service->get_client_country_code() ?: __('không xác định', 'wp-plugin-security');
+            $this->security_service->log_event('geo_blocked', sprintf(__('Chặn truy cập từ quốc gia %1$s, IP %2$s', 'wp-plugin-security'), $country_code, $user_ip), $user_ip);
+            wp_die(__('Khu vực của bạn hiện không được phép truy cập.', 'wp-plugin-security'), __('Truy cập bị từ chối', 'wp-plugin-security'), ['response' => 403]);
+        }
+
+        if ($this->security_service->is_rate_limited($user_ip, $_SERVER['REQUEST_URI'] ?? '', $_SERVER['REQUEST_METHOD'] ?? 'GET')) {
+            $this->security_service->log_event('rate_limited', sprintf(__('Rate limit kích hoạt cho IP %s', 'wp-plugin-security'), $user_ip), $user_ip);
+            wp_die(__('Bạn đang gửi quá nhiều yêu cầu trong thời gian ngắn. Vui lòng thử lại sau.', 'wp-plugin-security'), __('Tạm thời bị giới hạn', 'wp-plugin-security'), ['response' => 429]);
+        }
     }
 
     /**
@@ -237,6 +256,19 @@ class SecurityController
     }
 
     /**
+     * Ghi nhan cac trang 404 de phat hien do quet va auto-block.
+     */
+    public function handle_404_monitoring()
+    {
+        if (!is_404()) {
+            return;
+        }
+
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        $this->security_service->track_404($ip, $_SERVER['REQUEST_URI'] ?? '');
+    }
+
+    /**
      * Kiểm tra trạng thái khóa đăng nhập.
      */
     public function check_login_lockout($user, $username, $password)
@@ -244,6 +276,50 @@ class SecurityController
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
         if (!$this->security_service->check_login_attempts($ip)) {
             return new \WP_Error('locked_out', __('IP của bạn tạm thời bị khóa do thử sai quá nhiều lần.', 'wp-plugin-security'));
+        }
+
+        return $user;
+    }
+
+    /**
+     * Hiển thị ô nhập mã 2FA trên form đăng nhập.
+     */
+    public function render_two_factor_field()
+    {
+        if (!$this->security_service->is_two_factor_enabled()) {
+            return;
+        }
+        ?>
+        <p>
+            <label for="wps_2fa_code"><?php esc_html_e('Mã xác thực 2FA', 'wp-plugin-security'); ?><br>
+                <input type="text" name="wps_2fa_code" id="wps_2fa_code" class="input" value="" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6">
+            </label>
+        </p>
+        <?php
+    }
+
+    /**
+     * Kiểm tra mã xác thực 2FA sau khi username/password đã đúng.
+     */
+    public function check_two_factor_code($user, $username, $password)
+    {
+        if (!$user instanceof \WP_User) {
+            return $user;
+        }
+
+        if (!$this->security_service->requires_two_factor_for_user($user)) {
+            return $user;
+        }
+
+        $code = sanitize_text_field($_POST['wps_2fa_code'] ?? '');
+        if ($code === '') {
+            return new \WP_Error('wps_2fa_required', __('Vui lòng nhập mã xác thực 2FA.', 'wp-plugin-security'));
+        }
+
+        $secret = $this->security_service->get_two_factor_secret($user->ID);
+        if ($secret === '' || !$this->security_service->verify_two_factor_code($secret, $code)) {
+            $this->security_service->log_event('two_factor_failed', sprintf(__('Sai mã 2FA của user %s', 'wp-plugin-security'), $user->user_login), $user->ID);
+            return new \WP_Error('wps_2fa_invalid', __('Mã xác thực 2FA không đúng.', 'wp-plugin-security'));
         }
 
         return $user;

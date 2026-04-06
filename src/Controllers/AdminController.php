@@ -113,12 +113,12 @@ class AdminController
     public function render_admin_page()
     {
         $current_tab = sanitize_key($_GET['tab'] ?? 'general');
-        $notices = [];
-        $tab_meta = [
+        $notices = [];        $tab_meta = [
             'general' => ['label' => __('Hệ thống & WAF', 'wp-plugin-security'), 'icon' => 'dashicons-admin-generic', 'group' => 'security'],
             'login' => ['label' => __('Đăng nhập', 'wp-plugin-security'), 'icon' => 'dashicons-lock', 'group' => 'security'],
             'blacklist' => ['label' => __('Danh sách chặn IP', 'wp-plugin-security'), 'icon' => 'dashicons-no-alt', 'group' => 'security'],
             'audit' => ['label' => __('Nhật ký kiểm tra', 'wp-plugin-security'), 'icon' => 'dashicons-list-view', 'group' => 'security'],
+            'monitoring' => ['label' => __('Giám sát', 'wp-plugin-security'), 'icon' => 'dashicons-visibility', 'group' => 'security'],
             'speed' => ['label' => __('Tốc độ', 'wp-plugin-security'), 'icon' => 'dashicons-performance', 'group' => 'performance'],
             'updates' => ['label' => __('Cập nhật', 'wp-plugin-security'), 'icon' => 'dashicons-update', 'group' => 'editor_updates'],
             'seo' => ['label' => __('SEO & Mục lục', 'wp-plugin-security'), 'icon' => 'dashicons-search', 'group' => 'seo_content'],
@@ -150,6 +150,64 @@ class AdminController
             $group_tabs[$meta['group']][$tab_key] = $meta;
         }
 
+        $hero_meta_map = [
+            'security' => [
+                'eyebrow' => __('Nhóm bảo mật', 'wp-plugin-security'),
+                'title' => __('Bảo mật, xác thực và tường lửa', 'wp-plugin-security'),
+                'description' => __('Gia cố login, 2FA, WAF, geoblocking, chặn brute force và giám sát 404 từ một điềm điều khiển.', 'wp-plugin-security'),
+                'pills' => [__('2FA', 'wp-plugin-security'), __('WAF', 'wp-plugin-security'), __('404 monitor', 'wp-plugin-security')],
+            ],
+            'performance' => [
+                'eyebrow' => __('Nhóm hiệu năng', 'wp-plugin-security'),
+                'title' => __('Tối ưu tốc độ và cập nhật', 'wp-plugin-security'),
+                'description' => __('Dọn rác hệ thống, rút gọn HTML, tắt tài nguyên thừa và kiểm soát vòng đời cập nhật.', 'wp-plugin-security'),
+                'pills' => [__('Speed', 'wp-plugin-security'), __('Cleanup', 'wp-plugin-security'), __('Updates', 'wp-plugin-security')],
+            ],
+            'seo_content' => [
+                'eyebrow' => __('Nhóm SEO & nội dung', 'wp-plugin-security'),
+                'title' => __('SEO, mục lục và AI nội dung', 'wp-plugin-security'),
+                'description' => __('Tự chèn mục lục, tối ưu Rank Math, sinh meta bằng Gemini và quét/rewrite nội dung.', 'wp-plugin-security'),
+                'pills' => [__('SEO AI', 'wp-plugin-security'), __('TOC', 'wp-plugin-security'), __('Content AI', 'wp-plugin-security')],
+            ],
+            'editor_updates' => [
+                'eyebrow' => __('Nhóm soạn thảo & cập nhật', 'wp-plugin-security'),
+                'title' => __('Soạn thảo cổ điển và khóa cập nhật', 'wp-plugin-security'),
+                'description' => __('Giữ classic editor, mở rộng TinyMCE, đồng thời chặn update core/plugin/theme khi cần.', 'wp-plugin-security'),
+                'pills' => [__('Editor', 'wp-plugin-security'), __('Updates', 'wp-plugin-security'), __('Classic', 'wp-plugin-security')],
+            ],
+            'google' => [
+                'eyebrow' => __('Nhóm Google', 'wp-plugin-security'),
+                'title' => __('Indexing, login và captcha', 'wp-plugin-security'),
+                'description' => __('Kết nối Google Indexing API, đăng nhập Google và reCAPTCHA ngay trong một luòng cấu hình.', 'wp-plugin-security'),
+                'pills' => [__('Indexing API', 'wp-plugin-security'), __('Google Login', 'wp-plugin-security'), __('reCAPTCHA', 'wp-plugin-security')],
+            ],
+            'email_notifications' => [
+                'eyebrow' => __('Nhóm email & thông báo', 'wp-plugin-security'),
+                'title' => __('SMTP, cảnh báo và thanh thông báo', 'wp-plugin-security'),
+                'description' => __('Cấu hình SMTP, email tự động, notification bar và luòng thông báo vận hành.', 'wp-plugin-security'),
+                'pills' => [__('SMTP', 'wp-plugin-security'), __('Mail', 'wp-plugin-security'), __('Banner', 'wp-plugin-security')],
+            ],
+            'users' => [
+                'eyebrow' => __('Nhóm người dùng', 'wp-plugin-security'),
+                'title' => __('Cô lập dữ liệu và avatar nội bộ', 'wp-plugin-security'),
+                'description' => __('Giới hạn dữ liệu user thường, avatar cục bộ và các cột quản trị hỗ trợ vận hành.', 'wp-plugin-security'),
+                'pills' => [__('Isolation', 'wp-plugin-security'), __('Avatar', 'wp-plugin-security'), __('User ID', 'wp-plugin-security')],
+            ],
+            'woocommerce' => [
+                'eyebrow' => __('Nhóm WooCommerce', 'wp-plugin-security'),
+                'title' => __('Tùy biến bán hàng và cảnh báo đơn', 'wp-plugin-security'),
+                'description' => __('Đổi text, hiển thị liên hệ khi giá 0 và đẩy cảnh báo đơn qua Telegram.', 'wp-plugin-security'),
+                'pills' => [__('Store', 'wp-plugin-security'), __('Telegram', 'wp-plugin-security'), __('Checkout', 'wp-plugin-security')],
+            ],
+            'marketing_helpers' => [
+                'eyebrow' => __('Nhóm marketing & trợ giúp', 'wp-plugin-security'),
+                'title' => __('Chat, redirect, injector và công cụ khẩn cấp', 'wp-plugin-security'),
+                'description' => __('Dùng chat bubble, code injector, search/replace, redirects và công cụ cứu hộ tại một nơi.', 'wp-plugin-security'),
+                'pills' => [__('Chat', 'wp-plugin-security'), __('Redirect', 'wp-plugin-security'), __('Tools', 'wp-plugin-security')],
+            ],
+        ];
+        $hero_meta = $hero_meta_map[$current_group] ?? $hero_meta_map['security'];
+        $current_tab_label = $tab_meta[$current_tab]['label'] ?? __('Tổng quan', 'wp-plugin-security');
         if (isset($_POST['wps_tool_action']) && current_user_can('manage_options')) {
             check_admin_referer('wps_tool_nonce_action', 'wps_tool_nonce');
             $action = sanitize_key($_POST['wps_tool_action']);
@@ -225,6 +283,8 @@ class AdminController
                     'idle_logout_time' => (int) ($_POST['idle_logout_time'] ?? 0),
                     'enforce_strong_password' => isset($_POST['enforce_strong_password']),
                     'mask_login_errors' => isset($_POST['mask_login_errors']),
+                    'enable_two_factor' => isset($_POST['enable_two_factor']),
+                    'two_factor_required_roles' => array_values(array_filter(array_map('sanitize_key', (array) ($_POST['two_factor_required_roles'] ?? ['administrator'])))),
                 ]);
             } elseif ($current_tab === 'speed') {
                 $main_settings = array_merge($main_settings, [
@@ -336,6 +396,34 @@ class AdminController
                     'user_isolation_enabled' => isset($_POST['user_isolation_enabled']),
                     'local_avatar_enabled' => isset($_POST['local_avatar_enabled']),
                 ]);
+            } elseif ($current_tab === 'monitoring') {
+                $geo_countries_raw = (string) wp_unslash($_POST['geo_block_countries'] ?? '');
+                $geo_countries = preg_split('/[\s,]+/', $geo_countries_raw);
+                $geo_countries = array_values(array_filter(array_map(static function ($country) {
+                    return strtoupper(sanitize_text_field($country));
+                }, (array) $geo_countries)));
+
+                $main_settings = array_merge($main_settings, [
+                    'monitoring_enabled' => isset($_POST['monitoring_enabled']),
+                    'rate_limit_enabled' => isset($_POST['rate_limit_enabled']),
+                    'rate_limit_window_seconds' => max(10, (int) ($_POST['rate_limit_window_seconds'] ?? 60)),
+                    'rate_limit_max_requests' => max(5, (int) ($_POST['rate_limit_max_requests'] ?? 120)),
+                    'rate_limit_path_max_requests' => max(3, (int) ($_POST['rate_limit_path_max_requests'] ?? 30)),
+                    'geo_block_enabled' => isset($_POST['geo_block_enabled']),
+                    'geo_block_mode' => in_array(sanitize_key($_POST['geo_block_mode'] ?? 'deny'), ['deny', 'allow'], true) ? sanitize_key($_POST['geo_block_mode']) : 'deny',
+                    'geo_block_countries' => $geo_countries,
+                    'uploads_php_protection' => isset($_POST['uploads_php_protection']),
+                    'monitor_404_enabled' => isset($_POST['monitor_404_enabled']),
+                    'monitor_404_threshold' => max(1, (int) ($_POST['monitor_404_threshold'] ?? 6)),
+                    'monitor_404_window_minutes' => max(5, (int) ($_POST['monitor_404_window_minutes'] ?? 10)),
+                    'monitor_404_auto_block' => isset($_POST['monitor_404_auto_block']),
+                    'monitoring_scan_integrity' => isset($_POST['monitoring_scan_integrity']),
+                    'monitoring_scan_malware' => isset($_POST['monitoring_scan_malware']),
+                    'monitoring_scan_vulnerability' => isset($_POST['monitoring_scan_vulnerability']),
+                    'monitoring_cron_enabled' => isset($_POST['monitoring_cron_enabled']),
+                    'monitoring_email_alerts' => isset($_POST['monitoring_email_alerts']),
+                    'monitoring_cron_frequency' => in_array(sanitize_key($_POST['monitoring_cron_frequency'] ?? 'daily'), ['hourly', 'twicedaily', 'daily'], true) ? sanitize_key($_POST['monitoring_cron_frequency']) : 'daily',
+                ]);
             }
 
             update_option('wps_main_settings', $main_settings);
@@ -353,6 +441,8 @@ class AdminController
             'limit_login_attempts' => true,
             'max_login_attempts' => 5,
             'lockout_duration' => 60,
+            'enable_two_factor' => false,
+            'two_factor_required_roles' => ['administrator'],
             'disable_xmlrpc' => true,
             'disable_rest_api' => true,
             'block_author_scan' => true,
@@ -384,6 +474,22 @@ class AdminController
                 'seo_content_post_types' => $this->get_seo_content_post_types(),
                 'seo_content_use_gemini' => false,
                 'seo_content_gemini_prompt' => '',
+                'monitoring_enabled' => false,
+                'rate_limit_enabled' => false,
+                'rate_limit_window_seconds' => 60,
+                'rate_limit_max_requests' => 120,
+                'rate_limit_path_max_requests' => 30,
+                'geo_block_enabled' => false,
+                'geo_block_mode' => 'deny',
+                'geo_block_countries' => [],
+                'uploads_php_protection' => true,
+                'monitor_404_enabled' => false,
+                'monitor_404_threshold' => 6,
+                'monitor_404_window_minutes' => 10,
+                'monitor_404_auto_block' => false,
+                'monitoring_cron_enabled' => false,
+                'monitoring_email_alerts' => true,
+                'monitoring_cron_frequency' => 'daily',
                 'disable_block_editor' => false,
             'enable_tinymce_advanced' => true,
             'block_core_updates' => false,
@@ -513,8 +619,32 @@ class AdminController
                     border-radius: 18px;
                     box-shadow: 0 18px 40px rgba(1,34,61,0.14);
                 }
-                .wps-hero h2 { margin: 0; color: #fff; font-size: 30px; line-height: 1.1; }
+                .wps-hero-shell { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+                .wps-hero-copy { max-width: 760px; }
+                .wps-hero-eyebrow {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 7px 12px;
+                    border-radius: 999px;
+                    background: rgba(255,255,255,0.14);
+                    color: rgba(255,255,255,0.92);
+                    font-size: 12px;
+                    font-weight: 700;
+                    letter-spacing: 0.02em;
+                    text-transform: uppercase;
+                }
+                .wps-hero h2 { margin: 12px 0 0; color: #fff; font-size: 30px; line-height: 1.1; }
                 .wps-hero p { margin: 10px 0 0; max-width: 720px; color: rgba(255,255,255,0.92); }
+                .wps-hero-meta { display: grid; gap: 10px; justify-items: end; }
+                .wps-hero-current {
+                    padding: 10px 14px;
+                    border-radius: 14px;
+                    background: rgba(255,255,255,0.12);
+                    color: #fff;
+                    font-weight: 700;
+                }
+                .wps-hero--legacy { display: none; }
                 .wps-pill-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
                 .wps-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,0.12); font-size: 12px; font-weight: 600; }
                 .wps-notice {
@@ -654,6 +784,8 @@ class AdminController
                     .wps-admin-shell { grid-template-columns: 1fr; }
                     .wps-sidebar { position: static; }
                     .wps-grid.two { grid-template-columns: 1fr; }
+                    .wps-hero-shell { flex-direction: column; }
+                    .wps-hero-meta { justify-items: start; }
                 }
             </style>
 
@@ -677,12 +809,21 @@ class AdminController
                 </aside>
                 <main class="wps-main">
                     <section class="wps-hero">
-        <h2><?php _e('Thiết lập WP Security', 'wp-plugin-security'); ?></h2>
-                        <p><?php _e('Giao dien quan tri dong bo theo phong cach agent: sidebar tab ro rang, palette xanh chinh, the noi dung sach se va footer luu cau hinh co dinh.', 'wp-plugin-security'); ?></p>
-                        <div class="wps-pill-row">
-                            <span class="wps-pill"><?php _e('Tabbed dashboard', 'wp-plugin-security'); ?></span>
-                            <span class="wps-pill"><?php _e('Blue-first palette', 'wp-plugin-security'); ?></span>
-                            <span class="wps-pill"><?php _e('Sticky save footer', 'wp-plugin-security'); ?></span>
+                        <div class="wps-hero-shell">
+                            <div class="wps-hero-copy">
+                                <span class="wps-hero-eyebrow"><?php echo esc_html($hero_meta['eyebrow'] ?? $current_tab_label); ?></span>
+                                <h2><?php echo esc_html($hero_meta['title'] ?? __('Thi?t l?p WP Security', 'wp-plugin-security')); ?></h2>
+                                <p><?php echo esc_html($hero_meta['description'] ?? __('Giao di?n qu?n tr? d?ng b? theo phong c�ch agent.', 'wp-plugin-security')); ?></p>
+                                <div class="wps-pill-row">
+                                    <?php foreach ((array) ($hero_meta['pills'] ?? []) as $pill) : ?>
+                                        <span class="wps-pill"><?php echo esc_html($pill); ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <div class="wps-hero-meta">
+                                <span class="wps-hero-current"><?php echo esc_html($current_tab_label); ?></span>
+                                <span class="wps-pill"><?php echo esc_html($group_meta[$current_group]['label'] ?? $current_group); ?></span>
+                            </div>
                         </div>
                     </section>
 
@@ -759,28 +900,49 @@ class AdminController
                             <?php $this->render_number_row('idle_logout_time', 'Tự động đăng xuất (phút)', $main_settings, 0, '0 để tắt chức năng này.'); ?>
                         </table>
 
+                        <hr>
+
+                        <h2><?php _e('Xác thực 2 lớp', 'wp-plugin-security'); ?></h2>
+                        <table class="form-table" role="presentation">
+                            <?php $this->render_checkbox_row('enable_two_factor', 'Bật 2FA', $main_settings, 'Hiển thị ô mã xác thực 2FA trên form đăng nhập.'); ?>
+                            <tr>
+                                <th scope="row"><?php _e('Vai trò bắt buộc', 'wp-plugin-security'); ?></th>
+                                <td>
+                                    <?php
+                                    $required_roles = (array) ($main_settings['two_factor_required_roles'] ?? ['administrator']);
+                                    $roles = wp_roles()->roles;
+                                    foreach (['administrator', 'editor', 'author', 'contributor', 'subscriber'] as $role_key) :
+                                        $role_label = $roles[$role_key]['name'] ?? ucfirst($role_key);
+                                        ?>
+                                        <label><input type="checkbox" name="two_factor_required_roles[]" value="<?php echo esc_attr($role_key); ?>" <?php checked(in_array($role_key, $required_roles, true)); ?>> <?php echo esc_html($role_label); ?></label><br>
+                                    <?php endforeach; ?>
+                                    <p class="description"><?php _e('User trong các vai trò này sẽ phải nhập mã 2FA khi đăng nhập.', 'wp-plugin-security'); ?></p>
+                                </td>
+                            </tr>
+                        </table>
+
                         <input type="hidden" name="wps_save_settings" value="1">
                         <?php submit_button(__('Lưu thiết lập Đăng nhập', 'wp-plugin-security')); ?>
                     </form>
 
-                <?php elseif ($current_tab === 'speed') : ?>
+                                <?php elseif ($current_tab === 'speed') : ?>
                     <form method="post" action="">
                         <?php wp_nonce_field('wps_settings_action', 'wps_settings_nonce'); ?>
-        <h2><?php _e('Tốc độ & Tối ưu', 'wp-plugin-security'); ?></h2>
+                        <h2><?php _e('T?c ?? & T?i uu', 'wp-plugin-security'); ?></h2>
                         <div class="wps-grid two">
                             <div class="wps-card">
-                                <h4><?php _e('Frontend cleanup', 'wp-plugin-security'); ?></h4>
+                                <h4><?php _e('D?n d?p frontend', 'wp-plugin-security'); ?></h4>
                                 <table class="form-table wps-form-table" role="presentation">
-        <?php $this->render_checkbox_row('disable_emojis', 'Tắt Emoji', $main_settings, 'Tắt script và style emoji trên frontend/backend.'); ?>
-                                    <?php $this->render_checkbox_row('disable_block_library_css', 'Tắt CSS Block', $main_settings, 'Bỏ wp-block-library CSS không cần thiết trên frontend.'); ?>
-                                    <?php $this->render_checkbox_row('disable_dashicons', 'Tắt Dashicons', $main_settings, 'Vô hiệu hóa Dashicons cho visitor chưa đăng nhập.'); ?>
-        <?php $this->render_checkbox_row('minify_html', 'Rút gọn HTML', $main_settings, 'Gom khoảng trắng thừa trong HTML output.'); ?>
+                                    <?php $this->render_checkbox_row('disable_emojis', 'T?t Emoji', $main_settings, 'T?t script v� style emoji tr�n frontend/backend.'); ?>
+                                    <?php $this->render_checkbox_row('disable_block_library_css', 'T?t CSS Block', $main_settings, 'B? wp-block-library CSS kh�ng c?n thi?t tr�n frontend.'); ?>
+                                    <?php $this->render_checkbox_row('disable_dashicons', 'T?t Dashicons', $main_settings, 'V� hi?u h�a Dashicons cho visitor chua dang nh?p.'); ?>
+                                    <?php $this->render_checkbox_row('minify_html', 'R�t g?n HTML', $main_settings, 'Gom kho?ng tr?ng th?a trong HTML output.'); ?>
                                 </table>
                             </div>
 
                             <div class="wps-card">
-                                <h4><?php _e('Database cleanup', 'wp-plugin-security'); ?></h4>
-                                <p><?php _e('Xóa revision và transient hết hạn để giảm rác dữ liệu không cần thiết.', 'wp-plugin-security'); ?></p>
+                                <h4><?php _e('D?n d?p co s? d? li?u', 'wp-plugin-security'); ?></h4>
+                                <p><?php _e('X�a revision v� transient h?t h?n d? gi?m r�c d? li?u kh�ng c?n thi?t.', 'wp-plugin-security'); ?></p>
                                 <p>
                                     <button type="submit" name="wps_maintenance_action" value="cleanup_revisions" class="button"><?php _e('Clean Revisions', 'wp-plugin-security'); ?></button>
                                     <button type="submit" name="wps_maintenance_action" value="cleanup_transients" class="button"><?php _e('Clean Transients', 'wp-plugin-security'); ?></button>
@@ -789,7 +951,7 @@ class AdminController
                         </div>
 
                         <input type="hidden" name="wps_save_settings" value="1">
-                        <?php submit_button(__('Lưu thiết lập Tốc độ', 'wp-plugin-security')); ?>
+                        <?php submit_button(__('Luu thi?t l?p T?c ??', 'wp-plugin-security')); ?>
                     </form>
 
                 <?php elseif ($current_tab === 'seo') : ?>
@@ -1552,8 +1714,11 @@ class AdminController
                             </div>
                         </div>
                         <input type="hidden" name="wps_save_settings" value="1">
-        <?php submit_button(__('Lưu thiết lập Người dùng', 'wp-plugin-security')); ?>
+                        <?php submit_button(__('Lưu thiết lập Người dùng', 'wp-plugin-security')); ?>
                     </form>
+
+                <?php elseif ($current_tab === 'monitoring') : ?>
+                    <?php do_action('wps_render_admin_tab_monitoring', $main_settings); ?>
 
                 <?php elseif ($current_tab === 'blacklist') : ?>
                     <form method="post" action="">
@@ -1994,4 +2159,5 @@ class AdminController
 }
 
 // Copyright by AcmaTvirus
+
 
