@@ -12,7 +12,7 @@
                             <div class="wps-card">
         <h4><?php _e('Cảnh báo Telegram', 'wp-plugin-security'); ?></h4>
                                 <table class="form-table wps-form-table" role="presentation">
-        <?php $this->render_checkbox_row('woo_telegram_enabled', 'Bật cảnh báo', $main_settings, 'Gửi thông báo đơn hàng về Telegram bot.'); ?>
+        <?php $this->render_checkbox_row('woo_telegram_enabled', __('Bật cảnh báo', 'wp-plugin-security'), $main_settings, __('Gửi thông báo đơn hàng về Telegram bot.', 'wp-plugin-security')); ?>
         <tr><th scope="row"><label for="woo_telegram_bot_token"><?php _e('Mã bot', 'wp-plugin-security'); ?></label></th><td><input type="password" id="woo_telegram_bot_token" name="woo_telegram_bot_token" value="<?php echo esc_attr($main_settings['woo_telegram_bot_token'] ?? ''); ?>" class="regular-text"></td></tr>
         <tr><th scope="row"><label for="woo_telegram_chat_id"><?php _e('Chat ID', 'wp-plugin-security'); ?></label></th><td><input type="text" id="woo_telegram_chat_id" name="woo_telegram_chat_id" value="<?php echo esc_attr($main_settings['woo_telegram_chat_id'] ?? ''); ?>" class="regular-text"></td></tr>
                                 </table>

@@ -5,9 +5,9 @@
                             <div class="wps-card">
         <h4><?php _e('Khóa cập nhật', 'wp-plugin-security'); ?></h4>
                                 <table class="form-table wps-form-table" role="presentation">
-        <?php $this->render_checkbox_row('block_core_updates', 'Chặn cập nhật Core', $main_settings, 'Chặn kiểm tra/cập nhật WordPress core.'); ?>
-        <?php $this->render_checkbox_row('block_plugin_updates', 'Chặn cập nhật Plugin', $main_settings, 'Chặn cập nhật plugin.'); ?>
-        <?php $this->render_checkbox_row('block_theme_updates', 'Chặn cập nhật Theme', $main_settings, 'Chặn cập nhật theme.'); ?>
+        <?php $this->render_checkbox_row('block_core_updates', __('Chặn cập nhật Core', 'wp-plugin-security'), $main_settings, __('Chặn kiểm tra/cập nhật WordPress core.', 'wp-plugin-security')); ?>
+        <?php $this->render_checkbox_row('block_plugin_updates', __('Chặn cập nhật Plugin', 'wp-plugin-security'), $main_settings, __('Chặn cập nhật plugin.', 'wp-plugin-security')); ?>
+        <?php $this->render_checkbox_row('block_theme_updates', __('Chặn cập nhật Theme', 'wp-plugin-security'), $main_settings, __('Chặn cập nhật theme.', 'wp-plugin-security')); ?>
                                 </table>
                             </div>
                             <div class="wps-card">

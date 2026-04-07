@@ -6,8 +6,8 @@
                                 <th scope="row"><label for="rename_login_slug"><?php _e('Đường dẫn đăng nhập mới', 'wp-plugin-security'); ?></label></th>
                                 <td>
                                     <code><?php echo esc_html(home_url('/')); ?></code>
-                <input type="text" id="rename_login_slug" name="rename_login_slug" value="<?php echo esc_attr($main_settings['rename_login_slug'] ?? ''); ?>" placeholder="ví dụ: secret-login" class="regular-text">
-                                    <p class="description"><?php _e('Neu de trong, plugin se dung wp-login.php mac dinh.', 'wp-plugin-security'); ?></p>
+                <input type="text" id="rename_login_slug" name="rename_login_slug" value="<?php echo esc_attr($main_settings['rename_login_slug'] ?? ''); ?>" placeholder="<?php esc_attr_e('ví dụ: secret-login', 'wp-plugin-security'); ?>" class="regular-text">
+                                    <p class="description"><?php _e('Nếu để trống, plugin sẽ dùng wp-login.php mặc định.', 'wp-plugin-security'); ?></p>
                                 </td>
                             </tr>
                         </table>
@@ -16,25 +16,25 @@
 
                         <h2><?php _e('Brute Force Protection', 'wp-plugin-security'); ?></h2>
                         <table class="form-table" role="presentation">
-        <?php $this->render_checkbox_row('limit_login_attempts', 'Giới hạn đăng nhập', $main_settings, 'Khóa IP nếu đăng nhập sai nhiều lần.'); ?>
-        <?php $this->render_checkbox_row('mask_login_errors', 'Ẩn lỗi đăng nhập', $main_settings, 'Không cho biết tên người dùng hay mật khẩu sai.'); ?>
-        <?php $this->render_number_row('max_login_attempts', 'Số lần thử tối đa', $main_settings, 5); ?>
-        <?php $this->render_number_row('lockout_duration', 'Thời gian khóa (phút)', $main_settings, 60); ?>
+        <?php $this->render_checkbox_row('limit_login_attempts', __('Giới hạn đăng nhập', 'wp-plugin-security'), $main_settings, __('Khóa IP nếu đăng nhập sai nhiều lần.', 'wp-plugin-security')); ?>
+        <?php $this->render_checkbox_row('mask_login_errors', __('Ẩn lỗi đăng nhập', 'wp-plugin-security'), $main_settings, __('Không cho biết tên người dùng hay mật khẩu sai.', 'wp-plugin-security')); ?>
+        <?php $this->render_number_row('max_login_attempts', __('Số lần thử tối đa', 'wp-plugin-security'), $main_settings, 5); ?>
+        <?php $this->render_number_row('lockout_duration', __('Thời gian khóa (phút)', 'wp-plugin-security'), $main_settings, 60); ?>
                         </table>
 
                         <hr>
 
                         <h2><?php _e('Chính sách người dùng', 'wp-plugin-security'); ?></h2>
                         <table class="form-table" role="presentation">
-        <?php $this->render_checkbox_row('enforce_strong_password', 'Mật khẩu mạnh', $main_settings, 'Bắt buộc dùng mật khẩu mạnh với ít nhất 12 ký tự.'); ?>
-                            <?php $this->render_number_row('idle_logout_time', 'Tự động đăng xuất (phút)', $main_settings, 0, '0 để tắt chức năng này.'); ?>
+        <?php $this->render_checkbox_row('enforce_strong_password', __('Mật khẩu mạnh', 'wp-plugin-security'), $main_settings, __('Bắt buộc dùng mật khẩu mạnh với ít nhất 12 ký tự.', 'wp-plugin-security')); ?>
+                            <?php $this->render_number_row('idle_logout_time', __('Tự động đăng xuất (phút)', 'wp-plugin-security'), $main_settings, 0, __('0 để tắt chức năng này.', 'wp-plugin-security')); ?>
                         </table>
 
                         <hr>
 
                         <h2><?php _e('Xác thực 2 lớp', 'wp-plugin-security'); ?></h2>
                         <table class="form-table" role="presentation">
-                            <?php $this->render_checkbox_row('enable_two_factor', 'Bật 2FA', $main_settings, 'Hiển thị ô mã xác thực 2FA trên form đăng nhập.'); ?>
+                            <?php $this->render_checkbox_row('enable_two_factor', __('Bật 2FA', 'wp-plugin-security'), $main_settings, __('Hiển thị ô mã xác thực 2FA trên form đăng nhập.', 'wp-plugin-security')); ?>
                             <tr>
                                 <th scope="row"><?php _e('Vai trò bắt buộc', 'wp-plugin-security'); ?></th>
                                 <td>

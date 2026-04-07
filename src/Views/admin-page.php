@@ -102,13 +102,13 @@
             if ($action === 'kill_sessions') {
                 $destroyed_sessions = $this->destroy_all_sessions();
                 $notices[] = sprintf(
-                    'Đã đăng xuất %d phiên đăng nhập trên toàn website.',
+                    __('Đã đăng xuất %d phiên đăng nhập trên toàn website.', 'wp-plugin-security'),
                     $destroyed_sessions
                 );
             } elseif ($action === 'force_pw_reset') {
                 $reset_users = $this->force_password_reset_for_all_users();
                 $notices[] = sprintf(
-                    'Đã vô hiệu hóa mật khẩu và session hiện tại của %d tài khoản.',
+                    __('Đã vô hiệu hóa mật khẩu và session hiện tại của %d tài khoản.', 'wp-plugin-security'),
                     $reset_users
                 );
             }
@@ -121,19 +121,19 @@
             if ($current_tab === 'speed') {
                 if ($maintenance_action === 'cleanup_revisions') {
                     $removed = $this->cleanup_revisions();
-                    $notices[] = sprintf('Da xoa %d revision.', $removed);
+                    $notices[] = sprintf(__('Đã xóa %d revision.', 'wp-plugin-security'), $removed);
                 } elseif ($maintenance_action === 'cleanup_transients') {
                     $removed = $this->cleanup_expired_transients();
                     $notices[] = sprintf('Đã dọn %d transient hết hạn.', $removed);
                 } elseif ($maintenance_action === 'cleanup_autodrafts') {
                     $removed = $this->cleanup_auto_drafts();
-                    $notices[] = sprintf('Đã xóa %d auto-draft.', $removed);
+                    $notices[] = sprintf(__('Đã xóa %d auto-draft.', 'wp-plugin-security'), $removed);
                 } elseif ($maintenance_action === 'cleanup_spam_comments') {
                     $removed = $this->cleanup_spam_comments();
                     $notices[] = sprintf('Đã xóa %d spam comment.', $removed);
                 } elseif ($maintenance_action === 'optimize_database_tables') {
                     $optimized = $this->optimize_database_tables();
-                    $notices[] = sprintf('Đã tối ưu %d bảng cơ sở dữ liệu.', $optimized);
+                    $notices[] = sprintf(__('Đã tối ưu %d bảng cơ sở dữ liệu.', 'wp-plugin-security'), $optimized);
                 }
             }
         }
@@ -146,7 +146,7 @@
                 if ($search !== '') {
                     $result = $this->run_search_replace($search, $replace);
                     $notices[] = sprintf(
-                        'Da cap nhat %d noi dung va %d options.',
+                        __('Đã cập nhật %d nội dung và %d tùy chọn.', 'wp-plugin-security'),
                         (int) ($result['content'] ?? 0),
                         (int) ($result['options'] ?? 0)
                     );
@@ -335,7 +335,7 @@
                 update_option('wps_blocked_ips', $clean_ips);
             }
 
-            $notices[] = 'Configuration saved successfully.';
+            $notices[] = __('Lưu thiết lập thành công.', 'wp-plugin-security');
         }
 
         $main_settings = get_option('wps_main_settings', [
@@ -718,8 +718,8 @@
                         <div class="wps-hero-shell">
                             <div class="wps-hero-copy">
                                 <span class="wps-hero-eyebrow"><?php echo esc_html($hero_meta['eyebrow'] ?? $current_tab_label); ?></span>
-                                <h2><?php echo esc_html($hero_meta['title'] ?? __('Thi?t l?p WP Security', 'wp-plugin-security')); ?></h2>
-                                <p><?php echo esc_html($hero_meta['description'] ?? __('Giao di?n qu?n tr? d?ng b? theo phong c�ch agent.', 'wp-plugin-security')); ?></p>
+                                <h2><?php echo esc_html($hero_meta['title'] ?? __('Thiết lập WP Security', 'wp-plugin-security')); ?></h2>
+                                <p><?php echo esc_html($hero_meta['description'] ?? __('Giao diện quản trị đồng bộ theo phong cách AI/Agent.', 'wp-plugin-security')); ?></p>
                                 <div class="wps-pill-row">
                                     <?php foreach ((array) ($hero_meta['pills'] ?? []) as $pill) : ?>
                                         <span class="wps-pill"><?php echo esc_html($pill); ?></span>

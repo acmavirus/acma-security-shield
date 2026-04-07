@@ -5,13 +5,13 @@
                             <div class="wps-card">
         <h4><?php _e('Cô lập', 'wp-plugin-security'); ?></h4>
                                 <table class="form-table wps-form-table" role="presentation">
-                                    <?php $this->render_checkbox_row('user_isolation_enabled', 'Bật cô lập', $main_settings, 'Chặn user thường xem bài/media của người khác trong admin.'); ?>
+                                    <?php $this->render_checkbox_row('user_isolation_enabled', __('Bật cô lập', 'wp-plugin-security'), $main_settings, __('Chặn user thường xem bài/media của người khác trong admin.', 'wp-plugin-security')); ?>
                                 </table>
                             </div>
                             <div class="wps-card">
         <h4><?php _e('Ảnh đại diện cục bộ', 'wp-plugin-security'); ?></h4>
                                 <table class="form-table wps-form-table" role="presentation">
-                                    <?php $this->render_checkbox_row('local_avatar_enabled', 'Bật ảnh đại diện cục bộ', $main_settings, 'Cho phép lưu avatar trong media của site.'); ?>
+                                    <?php $this->render_checkbox_row('local_avatar_enabled', __('Bật ảnh đại diện cục bộ', 'wp-plugin-security'), $main_settings, __('Cho phép lưu avatar trong media của site.', 'wp-plugin-security')); ?>
                                 </table>
                             </div>
                         </div>
