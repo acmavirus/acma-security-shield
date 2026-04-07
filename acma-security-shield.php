@@ -4,7 +4,7 @@
  * Plugin Name: Acma Security Shield
  * Plugin URI:  https://github.com/acmavirus/acma-security-shield
  * Description: Advanced security solution for WordPress built with Clean Architecture.
- * Version:     3.0.18
+ * Version:     3.0.19
  * Author:      AcmaTvirus
  * Author URI:  https://thuc.me
  * License:     GPL2
