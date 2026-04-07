@@ -1,5 +1,5 @@
 === Acma Security Shield ===
-Contributors: acmavirus
+Contributors: acmatvjrus
 Donate link: https://thuc.me
 Tags: security, waf, firewall, 2fa, audit, malware-scan, geo-blocking
 Requires at least: 5.6
